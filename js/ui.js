@@ -918,6 +918,10 @@ export function showSection(sectionId, dbState, calendarioData) {
         renderFluxoDeCaixaChart(dbState);
         // Na Fase 3, também chamaremos o renderFluxoDeCaixaChart(dbState) aqui
     }
+    if (sectionId === 'templates') {
+        clearTemplateForm(); // Limpa o formulário ao entrar na seção
+        renderTemplates(dbState); // Renderiza a lista
+    }
     if (sectionId === 'calendario') {
         renderCalendario(calendarioData, dbState);
     }
