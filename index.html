@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Contratos - Fotografia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-100">
+
+    <div id="login-overlay" class="fixed inset-0 bg-gray-200 z-50 flex items-center justify-center">
+        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-sm">
+            <div class="flex items-center justify-center mb-6">
+                <i data-lucide="camera" class="h-10 w-10 text-gray-700"></i>
+                <h1 class="text-2xl font-bold ml-2 text-gray-800">Gestor de Contratos</h1>
+            </div>
+            <form id="login-form">
+                <div class="mb-4">
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" id="email" class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <div class="mb-6">
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
+                    <input type="password" id="password" class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <div id="login-error" class="text-red-500 text-sm mb-4 text-center hidden"></div>
+                <div class="flex items-center justify-between gap-4">
+                    <button type="submit" id="login-button" class="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors">Entrar</button>
+                    <button type="button" id="register-button" class="w-full bg-gray-600 text-white py-2 px-4 rounded hover:bg-gray-700 transition-colors">Registrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal de Adicionar Pagamento -->
+    <div id="add-payment-modal" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden items-center justify-center">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Adicionar Novo Pagamento</h2>
+            <form id="add-payment-form">
+                <input type="hidden" id="payment-contrato-id">
+                
+                <div class="mb-4">
+                    <label for="payment-amount" class="block text-sm font-medium text-gray-700 mb-1">Valor do Pagamento (R$)</label>
+                    <input type="number" step="0.01" id="payment-amount" class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="payment-date" class="block text-sm font-medium text-gray-700 mb-1">Data</label>
+                        <input type="date" id="payment-date" class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <div>
+                        <label for="payment-method" class="block text-sm font-medium text-gray-700 mb-1">Forma</label>
+                        <select id="payment-method" class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                            <option value="PIX">PIX</option>
+                            <option value="Dinheiro">Dinheiro</option>
+                            <option value="Cartão">Cartão</option>
+                            <option value="Transferência">Transferência</option>
+                            <option value="Outro">Outro</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-4">
+                    <button type="button" id="cancel-payment-button" class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400 transition-colors">Cancelar</button>
+                    <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors">Salvar Pagamento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="edit-contract-modal" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden items-center justify-center">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Editar Contrato</h2>
+            <form id="edit-contract-form">
+                <input type="hidden" id="edit-contrato-id">
+                
+                <div class="mb-4">
+                    <label for="edit-contrato-status" class="block text-sm font-medium text-gray-700 mb-1">Status do Contrato</label>
+                    <select id="edit-contrato-status" class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                        <option value="Proposta">Proposta</option>
+                        <option value="Enviado">Enviado</option>
+                        <option value="Assinado">Assinado</option>
+                        <option value="Concluído">Concluído</option>
+                        <option value="Cancelado">Cancelado</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label for="edit-contrato-link" class="block text-sm font-medium text-gray-700 mb-1">Link para o PDF (Assinado)</label>
+                    <input type="url" id="edit-contrato-link" placeholder="https://..." class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="mb-4">
+                    <label for="edit-contrato-forma-pagamento" class="block text-sm font-medium text-gray-700 mb-1">Forma de Pagamento (Descrição)</label>
+                    <textarea id="edit-contrato-forma-pagamento" rows="2" class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ex: Sinal R$1000 + 3x R$500"></textarea>
+                </div>
+
+                <div class="flex justify-end gap-4">
+                    <button type="button" id="cancel-edit-contract-button" class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400 transition-colors">Cancelar</button>
+                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ###################################################### -->
+    <!-- ALTERAÇÃO AQUI: Novo Modal "Dossiê" -->
+    <!-- ###################################################### -->
+    <div id="dossie-modal" class="fixed inset-0 bg-black bg-opacity-70 z-40 hidden items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-6xl modal-content">
+            <!-- Cabeçalho do Modal -->
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h2 class="text-2xl font-bold text-gray-800">Dossiê do Evento</h2>
+                <button onclick="window.app.closeDossieModal()" class="text-gray-400 hover:text-gray-600">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <!-- Conteúdo do Dossiê -->
+            <div id="dossie-content" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 overflow-y-auto max-h-[calc(90vh-100px)] p-1">
+                
+                <!-- Coluna 1: Informações Principais -->
+                <div class="space-y-6">
+                    <!-- Card Cliente/Evento -->
+                    <div class="bg-gray-50 p-4 rounded-lg shadow-inner">
+                        <h3 class="text-lg font-semibold text-gray-700 border-b pb-2 mb-3">Informações</h3>
+                        <div class="space-y-2">
+                            <div>
+                                <span class="text-xs text-gray-500">Evento</span>
+                                <p id="dossie-evento-nome" class="font-bold text-gray-900 text-lg">Nome do Evento</p>
+                            </div>
+                            <div>
+                                <span class="text-xs text-gray-500">Cliente</span>
+                                <p id="dossie-cliente-nome" class="font-medium text-gray-800">Nome do Cliente</p>
+                            </div>
+                            <div>
+                                <span class="text-xs text-gray-500">Contato</span>
+                                <p id="dossie-cliente-contato" class="text-sm text-gray-600">Telefone | Email</p>
+                            </div>
+                            <div>
+                                <span class="text-xs text-gray-500">Data do Evento</span>
+                                <p id="dossie-evento-data" class="text-sm text-gray-600">dd/mm/aaaa</p>
+                            </div>
+                            <div>
+                                <span class="text-xs text-gray-500">Local</span>
+                                <p id="dossie-evento-local" class="text-sm text-gray-600">Local do Evento</p>
+                            </div>
+                             <div>
+                                <span class="text-xs text-gray-500">Link do Contrato</span>
+                                <p id="dossie-contrato-link" class="text-sm text-blue-600 truncate">...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card Entregas -->
+                    <div class="bg-gray-50 p-4 rounded-lg shadow-inner">
+                        <h3 class="text-lg font-semibold text-gray-700 border-b pb-2 mb-3">Status das Entregas</h3>
+                        <div id="dossie-entregas-lista" class="space-y-3">
+                            <!-- Preenchido pelo JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coluna 2: Financeiro -->
+                <div class="space-y-6">
+                    <!-- Card Resumo Financeiro -->
+                    <div class="bg-blue-50 p-4 rounded-lg shadow-inner">
+                        <h3 class="text-lg font-semibold text-blue-800 border-b border-blue-200 pb-2 mb-3">Resumo Financeiro</h3>
+                        <div class="space-y-2">
+                            <div>
+                                <span class="text-xs text-blue-700">Valor do Contrato</span>
+                                <p id="dossie-valor-contrato" class="font-bold text-blue-900 text-2xl">R$ 0,00</p>
+                            </div>
+                            <div>
+                                <span class="text-xs text-green-700">Total Pago</span>
+                                <p id="dossie-total-pago" class="font-medium text-green-700 text-lg">R$ 0,00</p>
+                            </div>
+                            <div>
+                                <span class="text-xs text-red-700">Valor Restante</span>
+                                <p id="dossie-valor-restante" class="font-bold text-red-700 text-xl">R$ 0,00</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card Extrato de Pagamentos -->
+                    <div class="bg-gray-50 p-4 rounded-lg shadow-inner">
+                        <h3 class="text-lg font-semibold text-gray-700 border-b pb-2 mb-3">Extrato de Pagamentos</h3>
+                        <div id="dossie-pagamentos-lista" class="space-y-2 text-sm max-h-48 overflow-y-auto">
+                            <!-- Preenchido pelo JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coluna 3: Lucratividade -->
+                <div class="space-y-6">
+                    <!-- Card Lucratividade -->
+                    <div class="bg-green-50 p-4 rounded-lg shadow-inner">
+                        <h3 class="text-lg font-semibold text-green-800 border-b border-green-200 pb-2 mb-3">Lucratividade do Evento</h3>
+                        <div class="space-y-2">
+                            <div>
+                                <span class="text-xs text-green-700">Valor (Contrato)</span>
+                                <p id="dossie-lucro-valor" class="font-medium text-green-700 text-lg">+ R$ 0,00</p>
+                            </div>
+                            <div>
+                                <span class="text-xs text-red-700">Total de Custos</span>
+                                <p id="dossie-lucro-custos" class="font-medium text-red-700 text-lg">- R$ 0,00</p>
+                            </div>
+                            <div>
+                                <span class="text-xs text-gray-700">Lucro Líquido</span>
+                                <p id="dossie-lucro-liquido" class="font-bold text-gray-900 text-3xl">R$ 0,00</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card Lista de Custos -->
+                    <div class="bg-gray-50 p-4 rounded-lg shadow-inner">
+                        <h3 class="text-lg font-semibold text-gray-700 border-b pb-2 mb-3">Lista de Custos</h3>
+                        <div id="dossie-custos-lista" class="space-y-2 text-sm max-h-48 overflow-y-auto">
+                            <!-- Preenchido pelo JS -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!-- ###################################################### -->
+
+
+    <div id="app-container" class="hidden h-screen w-full md:flex">
+        <aside id="sidebar" class="sidebar bg-gray-800 text-white w-64 space-y-6 py-7 px-2 absolute inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0">
+            <a href="#" class="text-white flex items-center space-x-2 px-4">
+                <i data-lucide="camera" class="h-8 w-8"></i>
+                <span class="text-2xl font-extrabold">Gestor de Contratos</span>
+            </a>
+
+            <nav>
+                <a href="#" onclick="window.app.showSection('dashboard')" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 nav-link bg-gray-700">
+                    <i data-lucide="layout-dashboard" class="inline-block w-5 h-5 mr-2"></i> Dashboard
+                </a>
+                <a href="#" onclick="window.app.showSection('calendario')" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 nav-link">
+                    <i data-lucide="calendar" class="inline-block w-5 h-5 mr-2"></i> Calendário
+                </a>
+                <a href="#" onclick="window.app.showSection('clientes')" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 nav-link">
+                    <i data-lucide="contact" class="inline-block w-5 h-5 mr-2"></i> Clientes
+                </a>
+                <a href="#" onclick="window.app.showSection('eventos')" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 nav-link">
+                    <i data-lucide="calendar-days" class="inline-block w-5 h-5 mr-2"></i> Eventos
+                </a>
+                <a href="#" onclick="window.app.showSection('contratos')" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 nav-link">
+                    <i data-lucide="file-text" class="inline-block w-5 h-5 mr-2"></i> Contratos
+                </a>
+                <a href="#" onclick="window.app.showSection('gerador')" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 nav-link">
+                    <i data-lucide="pen-square" class="inline-block w-5 h-5 mr-2"></i> Gerar Contrato
+                </a>
+                <a href="#" onclick="window.app.showSection('entrega')" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 nav-link">
+                    <i data-lucide="package-check" class="inline-block w-5 h-5 mr-2"></i> Entrega
+                </a>
+                <a href="#" onclick="window.app.showSection('fotografos')" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 nav-link">
+                    <i data-lucide="user-square" class="inline-block w-5 h-5 mr-2"></i> Fotógrafos
+                </a>
+                <a href="#" onclick="window.app.showSection('financeiro')" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 nav-link">
+                    <i data-lucide="dollar-sign" class="inline-block w-5 h-5 mr-2"></i> Financeiro
+                </a>
+                <a href="#" onclick="window.app.showSection('custos')" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 nav-link">
+                    <i data-lucide="shopping-cart" class="inline-block w-5 h-5 mr-2"></i> Custos
+                </a>
+            </nav>
+        </aside>
+
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <header class="flex justify-between items-center p-4 bg-white border-b">
+                 <button id="mobile-menu-button" class="text-gray-500 focus:outline-none md:hidden">
+                    <i data-lucide="menu" class="h-6 w-6"></i>
+                </button>
+                <div class="flex items-center gap-4 ml-auto">
+                    <div id="auth-status" class="text-gray-700 text-sm"></div>
+                    <button id="logout-button" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition-colors">Sair</button>
+                </div>
+            </header>
+            
+            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-4 md:p-8">
+                
+                <div id="section-dashboard" class="content-section">
+                    <h1 class="text-3xl font-bold text-gray-800 mb-6">Dashboard</h1>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Linha 1: Funil -->
+                        <div class="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">Entregas Críticas</p>
+                                <p id="db-entregas-criticas" class="text-3xl font-bold text-red-600">0</p>
+                            </div>
+                            <div class="bg-red-100 p-3 rounded-full">
+                                <i data-lucide="alert-triangle" class="h-6 w-6 text-red-500"></i>
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">Fechado (Mês)</p>
+                                <p id="db-contratos-mes" class="text-3xl font-bold text-gray-800">R$ 0,00</p>
+                            </div>
+                             <div class="bg-green-100 p-3 rounded-full">
+                                <i data-lucide="file-check" class="h-6 w-6 text-green-500"></i>
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">Eventos (Próx. 30d)</p>
+                                <p id="db-eventos-30d" class="text-3xl font-bold text-gray-800">0</p>
+                            </div>
+                             <div class="bg-blue-100 p-3 rounded-full">
+                                <i data-lucide="calendar-check" class="h-6 w-6 text-blue-500"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Linha 2: Financeiro -->
+                        <div class="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">Pagamentos Pendentes (Total)</p>
+                                <p id="total-pendente" class="text-3xl font-bold text-gray-800">R$ 0,00</p>
+                            </div>
+                             <div class="bg-yellow-100 p-3 rounded-full">
+                                <i data-lucide="hourglass" class="h-6 w-6 text-yellow-600"></i>
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">Total de Custos (Total)</p>
+                                <p id="total-custos" class="text-3xl font-bold text-gray-800">R$ 0,00</p>
+                            </div>
+                             <div class="bg-orange-100 p-3 rounded-full">
+                                <i data-lucide="shopping-cart" class="h-6 w-6 text-orange-500"></i>
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">Lucro Líquido (Total)</p>
+                                <p id="lucro-liquido" class="text-3xl font-bold text-gray-800">R$ 0,00</p>
+                            </div>
+                             <div class="bg-teal-100 p-3 rounded-full">
+                                <i data-lucide="trending-up" class="h-6 w-6 text-teal-500"></i>
+                            </div>
+                        </div>
+                    </div>
+                     <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">
+            <i data-lucide="calendar-clock" class="inline-block w-5 h-5 mr-1 text-blue-500"></i>
+            Próximos 5 Eventos
+        </h2>
+        <div id="dashboard-proximos-eventos" class="space-y-3">
+            <p class="text-gray-500">Nenhum evento futuro agendado.</p>
+        </div>
+    </div>
+    
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">
+            <i data-lucide="package-check" class="inline-block w-5 h-5 mr-1 text-green-500"></i>
+            Últimos 5 Eventos (Entregas)
+        </h2>
+        <div id="dashboard-ultimos-eventos" class="space-y-4">
+            <p class="text-gray-500">Nenhum evento passado encontrado.</p>
+        </div>
+    </div>
+    
+</div>
+                </div>
+
+                <div id="section-calendario" class="content-section hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h1 class="text-3xl font-bold text-gray-800">Calendário de Eventos</h1>
+                        <div class="flex items-center gap-4">
+                            <button id="calendario-prev" class="p-2 rounded-full bg-white shadow-md hover:bg-gray-100" title="Mês Anterior">
+                                <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                            </button>
+                            <h2 id="calendario-mes-ano" class="text-2xl font-semibold text-gray-700 w-48 text-center"></h2>
+                            <button id="calendario-next" class="p-2 rounded-full bg-white shadow-md hover:bg-gray-100" title="Próximo Mês">
+                                <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg shadow-md">
+                        <div class="grid grid-cols-7 gap-px text-center font-semibold text-gray-600 rounded-t-lg bg-gray-50 p-4">
+                            <div>Dom</div>
+                            <div>Seg</div>
+                            <div>Ter</div>
+                            <div>Qua</div>
+                            <div>Qui</div>
+                            <div>Sex</div>
+                            <div>Sáb</div>
+                        </div>
+                        <div id="calendario-grid" class="grid grid-cols-7 gap-px bg-gray-200 border border-gray-200 rounded-b-lg">
+                            <!-- Dias serão preenchidos pelo JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="section-clientes" class="content-section hidden">
+                     <h1 class="text-3xl font-bold text-gray-800 mb-6">Clientes</h1>
+                     <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">Adicionar Novo Cliente</h2>
+                        <form id="form-cliente">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <input type="text" id="cliente-nome" placeholder="Nome do Cliente" class="w-full p-2 border rounded" required>
+                                <input type="tel" id="cliente-telefone" placeholder="Telefone (WhatsApp)" class="w-full p-2 border rounded">
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                <input type="email" id="cliente-email" placeholder="Email Principal" class="w-full p-2 border rounded">
+                                <input type="text" id="cliente-documento" placeholder="CPF ou CNPJ (para contrato)" class="w-full p-2 border rounded">
+                            </div>
+                            <div class="grid grid-cols-1 mt-4">
+                                <input type="text" id="cliente-endereco" placeholder="Endereço Completo com CEP" class="w-full p-2 border rounded">
+                            </div>
+                            <button type="submit" class="mt-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition">Adicionar Cliente</button>
+                        </form>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-md overflow-x-auto">
+                        <table class="w-full min-w-max responsive-table">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="p-4 text-left text-sm font-semibold text-gray-600">Cliente (Eventos)</th>
+                                    <th class="p-4 text-left text-sm font-semibold text-gray-600">Telefone</th>
+                                    <th class="p-4 text-left text-sm font-semibold text-gray-600">Email</th>
+                                    <th class="p-4 text-left text-sm font-semibold text-gray-600">Endereço</th>
+                                    <th class="p-4 text-left text-sm font-semibold text-gray-600">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-clientes">
+                               </tbody>
+                        </table>
+                    </div>
+                </div>
+
+
+                <div id="section-eventos" class="content-section hidden">
+                    <h1 class="text-3xl font-bold text-gray-800 mb-6">Gerenciar Eventos (Kanban)</h1>
+                    
+                    <!-- Formulário de Adicionar Evento (Mantido) -->
+                    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">Adicionar Novo Evento</h2>
+                        <form id="form-evento">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <select id="evento-cliente" class="w-full p-2 border rounded" required>
+                                    <option value="">Selecione o Cliente</option>
+                                </select>
+                                <input type="text" id="evento-nome" placeholder="Título do Evento (Ex: Casamento Joana e Pedro)" class="w-full p-2 border rounded" required>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                                <input type="date" id="evento-data" class="w-full p-2 border rounded" required>
+                                <input type="text" id="evento-local" placeholder="Local do Evento" class="w-full p-2 border rounded">
+                                <select id="evento-tipo" class="w-full p-2 border rounded" required>
+                                    <option value="">Tipo de Evento</option>
+                                    <option value="Casamento">Casamento</option>
+                                    <option value="Infantil">Infantil</option>
+                                    <option value="Corporativo">Corporativo</option>
+                                    <option value="Ensaio">Ensaio</option>
+                                    <option value="Evento Adulto">Evento Adulto</option>
+                                </select>
+                            </div>
+                            <textarea id="evento-descricao" placeholder="Descrição/Detalhes do Evento (Horários, observações, etc...)" class="w-full p-2 border rounded mt-4" rows="3"></textarea>
+                            <button type="submit" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition">Adicionar Evento</button>
+                        </form>
+                    </div>
+
+                    <!-- Formulário de Adicionar Coluna -->
+                    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">Gerenciar Colunas</h2>
+                        <form id="form-nova-coluna" class="flex items-center gap-4">
+                            <input type="text" id="coluna-nome" placeholder="Nome da Nova Coluna (Ex: A Fazer)" class="w-full p-2 border rounded" required>
+                            <button type="submit" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition whitespace-nowrap">Adicionar Coluna</button>
+                        </form>
+                    </div>
+
+                    <!-- O Quadro Kanban -->
+                    <div id="kanban-board-container" class="w-full overflow-x-auto">
+                        <div id="kanban-board" class="min-w-max">
+                            <!-- Colunas serão inseridas aqui pelo JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="section-contratos" class="content-section hidden">
+                    <h1 class="text-3xl font-bold text-gray-800 mb-6">Gestão de Contratos</h1>
+                    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">Adicionar Novo Contrato</h2>
+                        <form id="form-contrato">
+                            <!-- Linha 1: Cliente e Evento (filtrado) -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <select id="contrato-cliente" class="w-full p-2 border rounded" required>
+                                    <option value="">Selecione o Cliente</option>
+                                </select>
+                                <select id="contrato-evento" class="w-full p-2 border rounded" required>
+                                    <option value="">Selecione o Evento (escolha o cliente primeiro)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                                <input type="number" step="0.01" id="contrato-valor-total" placeholder="Valor Total (R$)" class="w-full p-2 border rounded" required>
+                                <div>
+                                    <label for="contrato-data" class="sr-only">Data do Contrato</label>
+                                    <input type="date" id="contrato-data" title="Data de assinatura do contrato" class="w-full p-2 border rounded" required>
+                                </div>
+                                <select id="contrato-status" class="w-full p-2 border rounded" required>
+                                    <option value="Proposta">Proposta</option>
+                                    <option value="Enviado">Enviado</option>
+                                    <option value="Assinado">Assinado</option>
+                                    <option value="Concluído">Concluído</option>
+                                    <option value="Cancelado">Cancelado</option>
+                                </select>
+                            </div>
+
+                            <!-- Linha 3: Link e Forma de Pagamento -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                <input type="url" id="contrato-link" placeholder="Link para o PDF (Google Drive, etc.)" class="w-full p-2 border rounded">
+                                <textarea id="contrato-forma-pagamento" placeholder="Forma de Pagamento (Ex: Sinal R$1000 + 3x R$500)" class="w-full p-2 border rounded" rows="2"></textarea>
+                            </div>
+                            <button type="submit" class="mt-4 bg-teal-500 text-white px-4 py-2 rounded hover:bg-teal-600 transition">Adicionar Contrato</button>
+                        </form>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-md overflow-x-auto">
+                        <table class="w-full min-w-max responsive-table">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="p-4 text-left text-sm font-semibold text-gray-600">Cliente</th>
+                                    <th class="p-4 text-left text-sm font-semibold text-gray-600">Evento</th>
+                                    <th class="p-4 text-left text-sm font-semibold text-gray-600">Financeiro (Total / Pago / Restante)</th>
+                                    <th class="p-4 text-left text-sm font-semibold text-gray-600">Status</th>
+                                    <th class="p-4 text-left text-sm font-semibold text-gray-600">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-contratos">
+                               <!-- Linhas de contrato serão inseridas aqui -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="section-gerador" class="content-section hidden">
+                    <h1 class="text-3xl font-bold text-gray-800 mb-6">Gerador de Contratos</h1>
+                    
+                    <main class="bg-white p-6 sm:p-8 rounded-xl shadow-md">
+                        <!-- Abas de Navegação -->
+                        <div class="mb-6 border-b border-gray-200">
+                            <nav class="flex -mb-px space-x-4" aria-label="Tabs">
+                                <button id="tab-form" class="tab-button active whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm">Formulário Detalhado</button>
+                                <button id="tab-text" class="tab-button whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">Entrada Rápida por Texto</button>
+                            </nav>
+                        </div>
+
+                        <form id="contractForm">
+                            <!-- Conteúdo da Aba Formulário -->
+                            <div id="content-form">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                                    <!-- Coluna Esquerda: Detalhes do Contrato e Financeiro -->
+                                    <div class="space-y-6">
+                                        <section>
+                                            <h2 class="text-xl font-semibold mb-4 border-b pb-2 text-blue-600">Detalhes do Contrato</h2>
+                                            <div class="space-y-4">
+                                                <div>
+                                                    <label for="contractType" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Contrato</label>
+                                                    <select id="contractType" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
+                                                        <option value="" disabled selected>Selecione o tipo...</option>
+                                                        <option value="1">Festa Infantil</option>
+                                                        <option value="6">Formatura Infantil</option>
+                                                        <option value="2">Casamento</option>
+                                                        <option value="3">Casamento Civil</option>
+                                                        <option value="4">Eventos em Geral</option>
+                                                        <option value="5">Entrada de Dados</option>
+                                                    </select>
+                                                </div>
+                                                <div id="eventDetails" class="space-y-4">
+                                                    <div>
+                                                        <label for="eventDate" class="block text-sm font-medium text-gray-700 mb-1">Data do Evento</label>
+                                                        <input type="date" id="eventDate" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                                    </div>
+                                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label for="eventTime" class="block text-sm font-medium text-gray-700 mb-1">Hora de Início</label>
+                                                            <input type="time" id="eventTime" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                                        </div>
+                                                        <div>
+                                                            <label for="eventDuration" class="block text-sm font-medium text-gray-700 mb-1">Duração (horas)</label>
+                                                            <input type="number" id="eventDuration" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Ex: 4">
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label for="eventLocal" class="block text-sm font-medium text-gray-700 mb-1">Local do Evento</label>
+                                                        <input type="text" id="eventLocal" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Salão de Festas X">
+                                                    </div>
+                                                </div>
+                                                 <div id="weddingPackageSection" class="hidden">
+                                                    <label for="weddingPackage" class="block text-sm font-medium text-gray-700 mb-1">Pacote de Casamento</label>
+                                                    <select id="weddingPackage" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                                        <option value="" disabled selected>Selecione um pacote...</option>
+                                                        <option value="AMOR ETERNO (4x de R$ 1.050,00)">AMOR ETERNO (4x de R$ 1.050,00)</option>
+                                                        <option value="ALIANÇAS DOURADAS (4x de R$ 925,00)">ALIANÇAS DOURADAS (4x de R$ 925,00)</option>
+                                                        <option value="LUA DE MEL (3x de R$ 950,00)">LUA DE MEL (3x de R$ 950,00)</option>
+                                                        <option value="MEMÓRIAS (3x de R$ 800,00)">MEMÓRIAS (3x de R$ 800,00)</option>
+                                                    </select>
+                                                </div>
+                                                <div id="infantilPackageSection" class="hidden">
+                                                    <label for="infantilPackage" class="block text-sm font-medium text-gray-700 mb-1">Pacote Festa Infantil</label>
+                                                    <select id="infantilPackage" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                                        <option value="" disabled selected>Selecione um pacote...</option>
+                                                        <option value="Diamante (4x de R$ 650,00)">Diamante (4x de R$ 650,00)</option>
+                                                        <option value="Ouro (3x de R$ 600,00)">Ouro (3x de R$ 600,00)</option>
+                                                        <option value="Prata (2x de R$ 600,00)">Prata (2x de R$ 600,00)</option>
+                                                        <option value="Bronze (2x de R$ 550,00)">Bronze (2x de R$ 550,00)</option>
+                                                    </select>
+                                                </div>
+                                                <div id="civilPackageSection" class="hidden">
+                                                    <label for="civilPackage" class="block text-sm font-medium text-gray-700 mb-1">Pacote Casamento Civil</label>
+                                                    <select id="civilPackage" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                                        <option value="" disabled selected>Selecione um pacote...</option>
+                                                        <option value="Tradicional (2x de R$ 600,00)">Tradicional (2x de R$ 600,00)</option>
+                                                        <option value="Premium (2x de R$ 750,00)">Premium (2x de R$ 750,00)</option>
+                                                        <option value="Super Premium (3x de R$ 800,00)">Super Premium (3x de R$ 800,00)</option>
+                                                    </select>
+                                                </div>
+                                                <div id="formaturaPackageSection" class="hidden">
+                                                    <label for="formaturaPackage" class="block text-sm font-medium text-gray-700 mb-1">Pacote Formatura Infantil</label>
+                                                    <select id="formaturaPackage" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                                        <option value="" disabled selected>Selecione um pacote...</option>
+                                                        <option value="Dei Bambini (4x de R$ 649,00)">Dei Bambini (4x de R$ 649,00)</option>
+                                                        <option value="Nana Coc (4x de R$ 599,00)">Nana Coc (4x de R$ 599,00)</option>
+                                                        <option value="Lepetit (4x de R$ 499,00)">Lepetit (4x de R$ 499,00)</option>
+                                                        <option value="ABC (4x de R$ 299,00)">ABC (4x de R$ 299,00)</option>
+                                                    </select>
+                                                </div>
+                                                 <div>
+                                                    <label for="package" class="block text-sm font-medium text-gray-700 mb-1">Descrição do Serviço / Observações</label>
+                                                    <textarea id="package" rows="3" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Descreva o serviço ou adicione itens não inclusos no pacote."></textarea>
+                                                </div>
+                                            </div>
+                                        </section>
+
+                                        <section>
+                                            <h2 class="text-xl font-semibold mt-6 mb-4 border-b pb-2 text-blue-600">Detalhes Financeiros</h2>
+                                            <div class="space-y-4">
+                                               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label for="value" class="block text-sm font-medium text-gray-700 mb-1">Valor do Contrato (R$)</label>
+                                                        <input type="number" id="value" step="0.01" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="2596.00" required>
+                                                    </div>
+                                                    <div>
+                                                        <label for="paymentMethod" class="block text-sm font-medium text-gray-700 mb-1">Forma de Pagamento</label>
+                                                        <input type="text" id="paymentMethod" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Ex: 4x no cartão..." required>
+                                                    </div>
+                                               </div>
+                                                 <div>
+                                                    <label for="rules" class="block text-sm font-medium text-gray-700 mb-1">Regras e Cláusulas Adicionais</label>
+                                                    <textarea id="rules" rows="3" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Ex: Prazo de entrega do material: 60 dias."></textarea>
+                                                </div>
+                                            </div>
+                                        </section>
+                                    </div>
+
+                                    <!-- Coluna Direita: Dados do Contratante -->
+                                    <section>
+                                         <h2 class="text-xl font-semibold mb-4 border-b pb-2 text-green-600">Dados do Contratante</h2>
+                                        <div class="space-y-4">
+                                            <div>
+                                                <label id="clientNameLabel" for="clientName" class="block text-sm font-medium text-gray-700 mb-1">Nome Completo</label>
+                                                <input type="text" id="clientName" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="Nome do Cliente" required>
+                                            </div>
+                                            <div id="formaturaStudentDetails" class="hidden space-y-4">
+                                                <input type="text" id="studentName" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="Nome do Formando(a)">
+                                                <input type="text" id="studentClass" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="Turma">
+                                            </div>
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                <input type="text" id="clientCPF" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="CPF" required>
+                                                <input type="text" id="clientRG" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="RG">
+                                            </div>
+                                            <input type="text" id="clientAddress" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="Endereço Completo com CEP" required>
+                                            <input type="email" id="clientEmail" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="E-mail" required>
+                                            <input type="tel" id="clientPhone" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="Telefone com DDD" required>
+                                            <div class="pt-2">
+                                                <label class="flex items-center">
+                                                    <input type="checkbox" id="imageRights" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                                    <span class="ml-2 text-sm text-gray-700">Autoriza o uso de imagem para portfólio?</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </section>
+                                </div>
+                            </div>
+
+                            <!-- Conteúdo da Aba Texto Rápido -->
+                            <div id="content-text" class="hidden">
+                                <label for="quickText" class="block text-sm font-medium text-gray-700 mb-2">Entrada de Dados Rápida</label>
+                                <p class="text-xs text-gray-500 mb-3">Complete os dados abaixo. O sistema irá distribuir as informações automaticamente no contrato selecionado.</p>
+                                <textarea id="quickText" rows="15" class="w-full form-input p-3 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
+                            </div>
+
+                            <div class="mt-8 text-center">
+                                <button type="button" id="generateButton" class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-10 rounded-lg shadow-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300">
+                                    Gerar Contrato
+                                </button>
+                            </div>
+                        </form>
+                    </main>
+                    
+                    <section id="outputSection" class="mt-10 bg-white p-6 sm:p-8 rounded-xl shadow-md hidden">
+                        <h2 class="text-2xl font-bold text-center mb-6">Contrato Gerado</h2>
+                        <div id="contractOutput" class="bg-white rounded-lg"></div>
+                        <div class="mt-6 flex flex-col sm:flex-row justify-center items-center gap-4 no-print">
+                            <button id="copyButton" class="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg">Copiar Texto</button>
+                            <button id="printButton" class="w-full sm:w-auto bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-6 rounded-lg">Imprimir / Salvar PDF</button>
+                        </div>
+                        <div id="copySuccess" class="mt-4 text-center text-green-600 font-medium hidden">Contrato copiado!</div>
+                    </section>
+
+                </div>
+
+
+                <div id="section-entrega" class="content-section hidden">
+                    <h1 class="text-3xl font-bold text-gray-800 mb-6">Gestão de Entregas</h1>
+                    
+                    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                        <div class="mb-4">
+                            <label for="entrega-evento-select" class="block text-sm font-medium text-gray-700 mb-1">Filtrar por Evento Específico</label>
+                            <select id="entrega-evento-select" class="w-full p-2 border rounded">
+                                <option value="">Ver todos os atrasos (Padrão)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="entrega-management-area" class="hidden grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Os cards de entrega (Prévia, Mídia, Álbum) serão inseridos aqui -->
+                    </div>
+
+                    <div id="entrega-default-view">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4">Entregas Atrasadas ou Vencendo Hoje</h2>
+                        <div id="entrega-atrasos-container" class="space-y-4">
+                            <!-- A lista de atrasos será inserida aqui pelo JS -->
+                        </div>
+                    </div>
+                </div>
+
+
+                <div id="section-fotografos" class="content-section hidden">
+                    <h1 class="text-3xl font-bold text-gray-800 mb-6">Fotógrafos</h1>
+                     <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">Adicionar Fotógrafo</h2>
+                        <form id="form-fotografo">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <input type="text" id="fotografo-nome" placeholder="Nome do Fotógrafo" class="w-full p-2 border rounded" required>
+                                <input type="text" id="fotografo-contato" placeholder="Contato" class="w-full p-2 border rounded" required>
+                            </div>
+                            <button type="submit" class="mt-4 bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 transition">Adicionar Fotógrafo</button>
+                        </form>
+                    </div>
+                     <div class="bg-white rounded-lg shadow-md overflow-x-auto">
+                        <table class="w-full min-w-max responsive-table">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="p-4 text-left text-sm font-semibold text-gray-600">Nome</th>
+                                    <th class="p-4 text-left text-sm font-semibold text-gray-600">Contato</th>
+                                    <th class="p-4 text-left text-sm font-semibold text-gray-600">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-fotografos">
+                               </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="section-financeiro" class="content-section hidden">
+                    <h1 class="text-3xl font-bold text-gray-800 mb-6">Histórico de Pagamentos</h1>
+                    
+                    <div class="bg-white rounded-lg shadow-md overflow-x-auto">
+                        <table class="w-full min-w-max responsive-table">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="p-4 text-left text-sm font-semibold text-gray-600">Data</th>
+                                    <th class="p-4 text-left text-sm font-semibold text-gray-600">Cliente</th>
+                                    <th class="p-4 text-left text-sm font-semibold text-gray-600">Contrato (Evento)</th>
+                                    <th class="p-4 text-left text-sm font-semibold text-gray-600">Forma</th>
+                                    <th class="p-4 text-left text-sm font-semibold text-gray-600">Valor Pago</th>
+                                    <th class="p-4 text-left text-sm font-semibold text-gray-600">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-financeiro">
+                                <!-- Pagamentos individuais serão listados aqui -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div id="section-custos" class="content-section hidden">
+                    <h1 class="text-3xl font-bold text-gray-800 mb-6">Controle de Custos</h1>
+                    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">Adicionar Novo Custo</h2>
+                        <form id="form-custo">
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                               <input type="text" id="custo-descricao" placeholder="Descrição (Ex: Pagamento Freela)" class="w-full p-2 border rounded" required>
+                               <input type="number" step="0.01" id="custo-valor" placeholder="Valor do Custo (R$)" class="w-full p-2 border rounded" required>
+                               <select id="custo-evento" class="w-full p-2 border rounded" required>
+                                   <option value="">Selecione o Evento</option>
+                               </select>
+                               <select id="custo-fotografo" class="w-full p-2 border rounded">
+                                   <option value="">Selecione o Fotógrafo (Opcional)</option>
+                               </select>
+                            </div>
+                            <button type="submit" class="mt-4 bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 transition">Adicionar Custo</button>
+                        </form>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-md overflow-x-auto">
+                        <table class="w-full min-w-max responsive-table">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="p-4 text-left text-sm font-semibold text-gray-600">Descrição</th>
+                                    <th class="p-4 text-left text-sm font-semibold text-gray-600">Evento Associado</th>
+                                    <th class="p-4 text-left text-sm font-semibold text-gray-600">Fotógrafo</th>
+                                    <th class="p-4 text-left text-sm font-semibold text-gray-600">Valor</th>
+                                    <th class="p-4 text-left text-sm font-semibold text-gray-600">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-custos">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+
+            </main>
+        </div>
+    </div>
+
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
