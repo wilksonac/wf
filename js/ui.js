@@ -914,6 +914,7 @@ export function showSection(sectionId, dbState, calendarioData) {
     if (sectionId === 'financeiro') {
         // Renderiza as listas financeiras avançadas quando a seção é aberta
         renderContasAReceber(dbState);
+        renderFluxoDeCaixaChart(dbState);
         // Na Fase 3, também chamaremos o renderFluxoDeCaixaChart(dbState) aqui
     }
     if (sectionId === 'calendario') {
