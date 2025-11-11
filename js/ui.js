@@ -794,6 +794,12 @@ export function showSection(sectionId, dbState, calendarioData) {
         document.getElementById('form-contrato').reset();
         document.getElementById('contrato-data').valueAsDate = new Date();
     }
+    // ADICIONE ESTE BLOCO NOVO
+    if (sectionId === 'financeiro') {
+        // Renderiza as listas financeiras avançadas quando a seção é aberta
+        renderContasAReceber(dbState);
+        // Na Fase 3, também chamaremos o renderFluxoDeCaixaChart(dbState) aqui
+    }
     if (sectionId === 'calendario') {
         renderCalendario(calendarioData, dbState);
     }
