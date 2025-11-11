@@ -42,6 +42,7 @@ function onDataChange(newState) {
     ui.renderFinanceiro(dbState);
     ui.renderCustos(dbState); // Atualizado na Fase 1
     ui.renderCalendario(calendarioData, dbState);
+    ui.renderTemplates(dbState);
     
     // Atualiza os selects
     ui.populateEventoClienteSelect(dbState);
@@ -383,5 +384,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Adicionado na Fase 1
     document.getElementById('custo-data').valueAsDate = new Date();
 });
+
 
 
