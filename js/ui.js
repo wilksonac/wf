@@ -8,7 +8,13 @@
 
 // --- 1. RENDERIZAÇÃO DO DASHBOARD ---
 
+// js/ui.js
+
+// 
+// SUBSTITUA A FUNÇÃO 'updateDashboard' INTEIRA POR ESTA
+//
 export function updateDashboard(dbState) {
+    // --- 1. Cards de Stats (Lógica existente) ---
     const totalPago = dbState.financeiro.reduce((acc, item) => acc + (parseFloat(item.valor) || 0), 0);
     
     let totalContratado = 0;
@@ -33,12 +39,12 @@ export function updateDashboard(dbState) {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
-    // 1. Entregas Críticas
+    // Entregas Críticas (Lógica existente)
     let entregasCriticasCount = 0;
     dbState.eventos.forEach(evento => {
         const tipos = ['previa', 'midia', 'album'];
         tipos.forEach(tipo => {
-            const info = getEntregaInfo(evento, tipo); // getEntregaInfo está mais abaixo neste arquivo
+            const info = getEntregaInfo(evento, tipo); // Esta função já existe no ui.js
             if (info.status === 'atrasado' || info.status === 'hoje') {
                 entregasCriticasCount++;
             }
@@ -46,7 +52,7 @@ export function updateDashboard(dbState) {
     });
     document.getElementById('db-entregas-criticas').innerText = entregasCriticasCount;
     
-    // 2. Contratos Fechados (Mês)
+    // Contratos Fechados (Mês) (Lógica existente)
     let valorContratosMes = 0;
     const mesAtual = hoje.getMonth();
     const anoAtual = hoje.getFullYear();
@@ -61,7 +67,7 @@ export function updateDashboard(dbState) {
     });
     document.getElementById('db-contratos-mes').innerText = `R$ ${valorContratosMes.toFixed(2).replace('.', ',')}`;
 
-    // 3. Eventos (Próximos 30 dias)
+    // Eventos (Próximos 30 dias) (Lógica existente)
     let eventos30DiasCount = 0;
     const dataLimite = new Date();
     dataLimite.setDate(hoje.getDate() + 30);
@@ -76,16 +82,76 @@ export function updateDashboard(dbState) {
     });
     document.getElementById('db-eventos-30d').innerText = eventos30DiasCount;
 
-    // --- Eventos Recentes ---
-    const dashboardEventosContainer = document.getElementById('dashboard-eventos-recentes');
-    dashboardEventosContainer.innerHTML = dbState.eventos.length === 0 
-        ? '<p class="text-gray-500">Nenhum evento cadastrado ainda.</p>'
-        : dbState.eventos.slice(0, 5).map(evento => {
-            const dataFormatada = evento.data ? new Date(evento.data + 'T00:00:00').toLocaleDateString('pt-BR') : 'Data indefinida';
-            return `<div class="border-b py-2 flex justify-between items-center"><p class="text-gray-700">${evento.nome}</p><p class="text-sm text-gray-500">${dataFormatada}</p></div>`;
-        }).join('');
-}
 
+    // --- 2. NOVAS LISTAS DE EVENTOS (Início da Lógica Nova) ---
+    
+    // --- Próximos 5 Eventos ---
+    const proximosEventosContainer = document.getElementById('dashboard-proximos-eventos');
+    
+    // Filtra eventos a partir de hoje e pega os 5 primeiros
+    // (dbState.eventos já vem ordenado por data do store.js)
+    const eventosFuturos = dbState.eventos
+        .filter(evento => evento.data && new Date(evento.data + 'T00:00:00') >= hoje)
+        .slice(0, 5); 
+
+    if (eventosFuturos.length === 0) {
+        proximosEventosContainer.innerHTML = '<p class="text-gray-500">Nenhum evento futuro agendado.</p>';
+    } else {
+        proximosEventosContainer.innerHTML = eventosFuturos.map(evento => {
+            const dataFormatada = new Date(evento.data + 'T00:00:00').toLocaleDateString('pt-BR');
+            const cliente = dbState.clientes.find(c => c.id === evento.clienteId);
+            return `
+                <div class="border-b border-gray-100 pb-2">
+                    <p class="font-semibold text-gray-800">${evento.nome}</p>
+                    <p class="text-sm text-gray-600">${cliente ? cliente.nome : 'Cliente'} - <strong>${dataFormatada}</strong></p>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // --- Últimos 5 Eventos (Entregas) ---
+    const ultimosEventosContainer = document.getElementById('dashboard-ultimos-eventos');
+    
+    // Filtra eventos que já passaram, pega os 5 mais recentes e inverte
+    const eventosPassados = dbState.eventos
+        .filter(evento => evento.data && new Date(evento.data + 'T00:00:00') < hoje)
+        .slice(-5) // Pega os 5 últimos da lista (mais recentes)
+        .reverse(); // Inverte para mostrar o mais recente no topo
+
+    if (eventosPassados.length === 0) {
+        ultimosEventosContainer.innerHTML = '<p class="text-gray-500">Nenhum evento passado encontrado.</p>';
+    } else {
+        ultimosEventosContainer.innerHTML = eventosPassados.map(evento => {
+            // Reusa a lógica de cálculo de entrega
+            const infoMidia = getEntregaInfo(evento, 'midia');
+            const infoAlbum = getEntregaInfo(evento, 'album');
+
+            // Função auxiliar para cor do status
+            const getStatusColor = (info) => {
+                if (info.status === 'entregue') return 'text-green-600';
+                if (info.status === 'atrasado') return 'text-red-600';
+                if (info.status === 'hoje') return 'text-yellow-600';
+                return 'text-blue-600'; // pendente
+            };
+            
+            const midiaColor = getStatusColor(infoMidia);
+            const albumColor = getStatusColor(infoAlbum);
+            const dataFormatada = new Date(evento.data + 'T00:00:00').toLocaleDateString('pt-BR');
+
+            return `
+                <div class="border-b border-gray-100 pb-3">
+                    <p class_="font-semibold text-gray-800">${evento.nome} <span class="text-sm text-gray-500">(${dataFormatada})</span></p>
+                    <div class="text-sm space-y-1 mt-1 pl-2">
+                        <p><strong>Mídia:</strong> <span class="font-medium ${midiaColor}">${infoMidia.text}</span></p>
+                        <p><strong>Álbum:</strong> <span class="font-medium ${albumColor}">${infoAlbum.text}</span></p>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    // (Fim da Lógica Nova)
+}
 
 // --- 2. RENDERIZAÇÃO DAS SEÇÕES PRINCIPAIS (Kanban, Tabelas) ---
 
@@ -885,4 +951,5 @@ export function showLoginError(message) {
 
 export function hideLoginError() {
     document.getElementById('login-error').classList.add('hidden');
+
 }
