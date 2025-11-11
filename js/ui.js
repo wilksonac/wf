@@ -13,6 +13,7 @@
 // 
 // SUBSTITUA A FUNÇÃO 'updateDashboard' INTEIRA POR ESTA
 //
+let myFluxoChart = null;
 export function updateDashboard(dbState) {
     // --- 1. Cards de Stats (Lógica existente) ---
     const totalPago = dbState.financeiro.reduce((acc, item) => acc + (parseFloat(item.valor) || 0), 0);
