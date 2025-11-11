@@ -203,14 +203,25 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(() => e.target.reset()) // Limpa o form em caso de sucesso
             .catch(e => alert(e.message));
     });
-    document.getElementById('form-template').addEventListener('submit', (e) => {
+    // ... (dentro do 'DOMContentLoaded')
+document.getElementById('form-template').addEventListener('submit', (e) => {
     e.preventDefault();
     const templateId = e.target.elements['template-id'].value; // Pega o ID (se estiver editando)
     const data = {
         titulo: e.target.elements['template-titulo'].value,
-        corpo: e.target.elements['template-corpo'].value
+        corpo: e.target.elements['template-corpo'].value,
+        link_tipo: e.target.elements['template-link-tipo'].value, // <-- ADICIONADO
+        link_pacote: e.target.elements['template-link-pacote'].value // <-- ADICIONADO
     };
-
+    
+    store.saveTemplate(userId, data, templateId || null)
+        .then(() => {
+            ui.clearTemplateForm(); // Limpa o formulário
+        })
+        .catch(e => {
+            alert("Falha ao salvar template: " + e.message);
+        });
+});
     store.saveTemplate(userId, data, templateId || null)
         .then(() => {
             ui.clearTemplateForm(); // Limpa o formulário
@@ -384,6 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Adicionado na Fase 1
     document.getElementById('custo-data').valueAsDate = new Date();
 });
+
 
 
 
