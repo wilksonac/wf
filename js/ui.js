@@ -244,7 +244,66 @@ export function renderClientes(dbState) {
             </tr>`;
         }).join('');
 }
+//
+// ADICIONE ESTA NOVA FUNÇÃO no js/ui.js
+//
+export function renderContasAReceber(dbState) {
+    const lista = document.getElementById('lista-contas-a-receber');
+    if (!lista) return;
 
+    let pendencias = [];
+
+    dbState.contratos.forEach(contrato => {
+        // Ignora contratos que não estão ativos
+        if (contrato.status === 'Cancelado' || contrato.status === 'Proposta') {
+            return;
+        }
+
+        const valorTotal = parseFloat(contrato.valorTotal || 0);
+        const totalPago = dbState.financeiro
+            .filter(p => p.contratoId === contrato.id)
+            .reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0);
+
+        const restante = valorTotal - totalPago;
+
+        if (restante > 0) {
+            const cliente = dbState.clientes.find(c => c.id === contrato.clienteId) || { nome: 'Cliente?' };
+            const evento = dbState.eventos.find(e => e.id === contrato.eventoId) || { nome: 'Evento?', data: '1970-01-01' };
+
+            pendencias.push({
+                contratoId: contrato.id,
+                clienteNome: cliente.nome,
+                eventoNome: evento.nome,
+                dataEvento: evento.data,
+                restante: restante
+            });
+        }
+    });
+
+    // Ordena por data do evento (mais antigos primeiro)
+    pendencias.sort((a, b) => new Date(a.dataEvento) - new Date(b.dataEvento));
+
+    if (pendencias.length === 0) {
+        lista.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">Nenhum pagamento pendente!</td></tr>';
+        return;
+    }
+
+    lista.innerHTML = pendencias.map(item => `
+        <tr class="border-b hover:bg-gray-50">
+            <td class="p-3">${item.clienteNome}</td>
+            <td class="p-3">${item.eventoNome}</td>
+            <td class="p-3 font-medium text-red-600">R$ ${item.restante.toFixed(2).replace('.', ',')}</td>
+            <td class="p-3 flex gap-2">
+                <button onclick="window.app.openAddPaymentModal('${item.contratoId}')" class="text-green-500 hover:text-green-700" title="Adicionar Pagamento">
+                    <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                </button>
+                <button onclick="window.app.openDossieModal('${item.contratoId}')" class="text-blue-500 hover:text-blue-700" title="Ver Dossiê">
+                    <i data-lucide="eye" class="w-5 h-5"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
 export function renderContratos(dbState) {
     const lista = document.getElementById('lista-contratos');
     lista.innerHTML = dbState.contratos.length === 0 
