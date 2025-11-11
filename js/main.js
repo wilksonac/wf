@@ -16,7 +16,7 @@ import { initDragAndDrop } from './kanban.js';
 let userId = null;
 let dbState = { 
     eventos: [], clientes: [], contratos: [], fotografos: [], 
-    financeiro: [], custos: [], colunas: [], templates: []
+    financeiro: [], custos: [], colunas: [], templates: [] // Adicionado 'templates'
 };
 let unsubscribeListeners = []; // Array para guardar as funções 'unsubscribe' do Firestore
 let calendarioData = new Date(); // Controla o mês/ano do calendário
@@ -40,9 +40,8 @@ function onDataChange(newState) {
     ui.renderContratos(dbState);
     ui.renderFotografos(dbState);
     ui.renderFinanceiro(dbState);
-    ui.renderCustos(dbState); // Atualizado na Fase 1
+    ui.renderCustos(dbState);
     ui.renderCalendario(calendarioData, dbState);
-    ui.renderTemplates(dbState);
     
     // Atualiza os selects
     ui.populateEventoClienteSelect(dbState);
@@ -59,13 +58,14 @@ function onDataChange(newState) {
         ui.renderEntregasAtrasadas(dbState);
     }
     
-    // Atualiza a visão de Contas a Receber (Fase 2)
-    // Verifica se a seção financeira está ativa para renderizar
+    // Atualiza a visão de Contas a Receber e Gráfico (Fase 2 e 3)
     if (!document.getElementById('section-financeiro').classList.contains('hidden')) {
         ui.renderContasAReceber(dbState);
         ui.renderFluxoDeCaixaChart(dbState);
-        // Na Fase 3, chamaremos o gráfico aqui
     }
+
+    // Atualiza a lista de Templates
+    ui.renderTemplates(dbState);
 
     // Reativa os ícones do Lucide (essencial após re-renderizar)
     if (window.lucide) {
@@ -103,7 +103,7 @@ function onLogout() {
     unsubscribeListeners = [];
     
     // Limpa o estado e re-renderiza a tela (vazia)
-    dbState = { eventos: [], clientes: [], contratos: [], fotografos: [], financeiro: [], custos: [], colunas: [], templates: [] };
+    dbState = { eventos: [], clientes: [], contratos: [], fotografos: [], financeiro: [], custos: [], colunas: [], templates: [] }; // Adicionado 'templates'
     onDataChange(dbState); 
 }
 
@@ -113,29 +113,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Inicia os "especialistas"
     setupAuthListeners(onLogin, onLogout);
-    initGeradorListeners();
+    initGeradorListeners(); // Esta função agora SÓ ativa os listeners
     initDragAndDrop(); 
     
     // --- IMPORTANTE: recria o objeto 'window.app' ---
     // O seu HTML usa onclick="window.app.funcao()".
     // Este objeto faz a "ponte" entre o HTML e nossos módulos JS.
     window.app = {
-        editTemplate: (templateId) => {
-        if (!templateId) return;
-        const template = dbState.templates.find(t => t.id === templateId);
-        if (template) {
-            ui.populateTemplateForm(template);
-        }
-        },
-            clearTemplateForm: () => {
-            ui.clearTemplateForm();
-        },
-        getDbState: () => {
-            return dbState; // Expõe o estado atual para o gerador
-        },
-
-        // Funções de Ação (chamam o Store)
-        deleteItem: (collectionName, id) => {
         // Funções de Navegação e Modais (chamam a UI)
         showSection: (sectionId) => ui.showSection(sectionId, dbState, calendarioData),
         openDossieModal: (contratoId) => ui.openDossieModal(contratoId, dbState),
@@ -157,15 +141,33 @@ document.addEventListener('DOMContentLoaded', () => {
             ui.viewEntregaFromAtraso(eventId, dbState);
         },
 
+        // Funções do Editor de Template
+        editTemplate: (templateId) => {
+            if (!templateId) return;
+            const template = dbState.templates.find(t => t.id === templateId);
+            if (template) {
+                ui.populateTemplateForm(template);
+            }
+        },
+        clearTemplateForm: () => {
+            ui.clearTemplateForm();
+        },
+
+        // ######################
+        // AQUI ESTAVA O ERRO (vírgula adicionada em clearTemplateForm)
+        // ######################
+        
+        // "Função-Ponte" para o Gerador
+        getDbState: () => {
+            return dbState; // Expõe o estado atual para o gerador
+        },
+
         // Funções de Ação (chamam o Store)
         deleteItem: (collectionName, id) => {
             if (!userId) return;
             
             let message = `Tem certeza que deseja excluir este item?`;
             
-            // ######################
-            // AQUI ESTAVA O ERRO (Corrigido de \N para \n)
-            // ######################
             if (collectionName === 'clientes' || collectionName === 'eventos') {
                 message += `\nNenhum contrato, evento ou pagamento associado será excluído.`;
             } else if (collectionName === 'contratos') {
@@ -175,7 +177,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             if (confirm(message)) {
-                store.deleteItem(userId, collectionName, id)
+                // CORREÇÃO: Chama 'deleteSingleItem' para exclusões simples
+                store.deleteSingleItem(userId, collectionName, id)
                     .catch(e => alert(e.message)); // Mostra erro se falhar
             }
         },
@@ -209,33 +212,6 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(() => e.target.reset()) // Limpa o form em caso de sucesso
             .catch(e => alert(e.message));
     });
-    // ... (dentro do 'DOMContentLoaded')
-document.getElementById('form-template').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const templateId = e.target.elements['template-id'].value; // Pega o ID (se estiver editando)
-    const data = {
-        titulo: e.target.elements['template-titulo'].value,
-        corpo: e.target.elements['template-corpo'].value,
-        link_tipo: e.target.elements['template-link-tipo'].value, // <-- ADICIONADO
-        link_pacote: e.target.elements['template-link-pacote'].value // <-- ADICIONADO
-    };
-    
-    store.saveTemplate(userId, data, templateId || null)
-        .then(() => {
-            ui.clearTemplateForm(); // Limpa o formulário
-        })
-        .catch(e => {
-            alert("Falha ao salvar template: " + e.message);
-        });
-});
-    store.saveTemplate(userId, data, templateId || null)
-        .then(() => {
-            ui.clearTemplateForm(); // Limpa o formulário
-        })
-        .catch(e => {
-            alert("Falha ao salvar template: " + e.message);
-        });
-        });
 
     document.getElementById('form-evento').addEventListener('submit', (e) => {
         e.preventDefault();
@@ -295,13 +271,10 @@ document.getElementById('form-template').addEventListener('submit', (e) => {
             .catch(e => alert(e.message));
     });
     
-    // ######################
-    // ATUALIZAÇÃO DA FASE 1 (Form de Custo)
-    // ######################
     document.getElementById('form-custo').addEventListener('submit', (e) => {
         e.preventDefault();
         const data = {
-            data: e.target.elements['custo-data'].value, // <-- CAMPO ADICIONADO
+            data: e.target.elements['custo-data'].value,
             descricao: e.target.elements['custo-descricao'].value, 
             valor: parseFloat(e.target.elements['custo-valor'].value), 
             eventoId: e.target.elements['custo-evento'].value,
@@ -310,7 +283,6 @@ document.getElementById('form-template').addEventListener('submit', (e) => {
         store.handleFormSubmit(userId, 'custos', data)
             .then(() => {
                 e.target.reset();
-                // Reseta a data para hoje
                 document.getElementById('custo-data').valueAsDate = new Date();
             })
             .catch(e => alert(e.message));
@@ -334,6 +306,26 @@ document.getElementById('form-template').addEventListener('submit', (e) => {
             .catch(e => alert(e.message));
     });
     
+    // Novo Formulário de Template
+    document.getElementById('form-template').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const templateId = e.target.elements['template-id'].value; // Pega o ID (se estiver editando)
+        const data = {
+            titulo: e.target.elements['template-titulo'].value,
+            corpo: e.target.elements['template-corpo'].value,
+            link_tipo: e.target.elements['template-link-tipo'].value,
+            link_pacote: e.target.elements['template-link-pacote'].value
+        };
+
+        store.saveTemplate(userId, data, templateId || null)
+            .then(() => {
+                ui.clearTemplateForm(); // Limpa o formulário
+            })
+            .catch(e => {
+                alert("Falha ao salvar template: " + e.message);
+            });
+    });
+
     // -- Formulários de Modais --
     document.getElementById('add-payment-form').addEventListener('submit', (e) => {
         e.preventDefault();
@@ -392,17 +384,11 @@ document.getElementById('form-template').addEventListener('submit', (e) => {
     });
     
     document.getElementById('mobile-menu-button').addEventListener('click', () => {
-        document.getElementById('sidebar').classList.toggle('-translatex-full');
+        document.getElementById('sidebar').classList.toggle('-translate-x-full');
     });
 
     // Seta a data padrão nos forms
     document.getElementById('contrato-data').valueAsDate = new Date();
     document.getElementById('payment-date').valueAsDate = new Date();
-    // Adicionado na Fase 1
     document.getElementById('custo-data').valueAsDate = new Date();
 });
-
-
-
-
-
