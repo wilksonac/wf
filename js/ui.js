@@ -1142,3 +1142,52 @@ export function hideLoginError() {
     document.getElementById('login-error').classList.add('hidden');
 
 }
+//
+// ADICIONE ESTAS 3 NOVAS FUNÇÕES no js/ui.js
+//
+
+/**
+ * Renderiza a lista de templates salvos na sidebar do editor.
+ */
+export function renderTemplates(dbState) {
+    const lista = document.getElementById('lista-templates');
+    if (!lista) return;
+
+    if (dbState.templates.length === 0) {
+        lista.innerHTML = '<p class="text-sm text-gray-500">Nenhum template salvo.</p>';
+        return;
+    }
+
+    lista.innerHTML = dbState.templates.map(template => `
+        <div class="flex justify-between items-center p-2 border rounded-md hover:bg-gray-50">
+            <span class="font-medium text-sm text-gray-700 truncate" title="${template.titulo}">${template.titulo}</span>
+            <div class="flex-shrink-0 flex gap-2 ml-2">
+                <button onclick="window.app.editTemplate('${template.id}')" class="text-blue-500 hover:text-blue-700" title="Editar">
+                    <i data-lucide="edit-2" class="w-4 h-4"></i>
+                </button>
+                <button onclick="window.app.deleteItem('templates', '${template.id}')" class="text-red-500 hover:text-red-700" title="Excluir">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+/**
+ * Preenche o formulário de template para edição.
+ */
+export function populateTemplateForm(template) {
+    document.getElementById('template-id').value = template.id;
+    document.getElementById('template-titulo').value = template.titulo;
+    document.getElementById('template-corpo').value = template.corpo;
+    // Foca no topo da página
+    document.getElementById('section-templates').scrollIntoView({ behavior: 'smooth' });
+}
+
+/**
+ * Limpa o formulário de template (para modo "Novo" ou após salvar).
+ */
+export function clearTemplateForm() {
+    document.getElementById('form-template').reset();
+    document.getElementById('template-id').value = ''; // Garante que o ID oculto está limpo
+}
