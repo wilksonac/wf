@@ -1180,14 +1180,19 @@ export function renderTemplates(dbState) {
 /**
  * Preenche o formulário de template para edição.
  */
+/**
+ * Preenche o formulário de template para edição.
+ */
 export function populateTemplateForm(template) {
     document.getElementById('template-id').value = template.id;
     document.getElementById('template-titulo').value = template.titulo;
     document.getElementById('template-corpo').value = template.corpo;
+    document.getElementById('template-link-tipo').value = template.link_tipo || ''; // <-- ADICIONADO
+    document.getElementById('template-link-pacote').value = template.link_pacote || ''; // <-- ADICIONADO
+
     // Foca no topo da página
     document.getElementById('section-templates').scrollIntoView({ behavior: 'smooth' });
 }
-
 /**
  * Limpa o formulário de template (para modo "Novo" ou após salvar).
  */
