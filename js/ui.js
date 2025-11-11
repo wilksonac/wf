@@ -649,8 +649,9 @@ export function populateEventoClienteSelect(dbState) {
 }
 
 export function populateEventoSelect(dbState) {
+    // ATUALIZAÇÃO AQUI: Alterado o texto do 'header'
     populateSelectWithOptions('custo-evento', { 
-        header: '<option value="">Selecione o Evento</option>', 
+        header: '<option value="">Custo Fixo / Nenhum Evento</option>', 
         data: dbState.eventos 
     });
 }
