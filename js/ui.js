@@ -922,6 +922,10 @@ export function showSection(sectionId, dbState, calendarioData) {
         clearTemplateForm(); // Limpa o formulário ao entrar na seção
         renderTemplates(dbState); // Renderiza a lista
     }
+    if (sectionId === 'pacotes') {
+        clearPacoteForm();
+        renderPacotes(dbState);
+    }
     if (sectionId === 'calendario') {
         renderCalendario(calendarioData, dbState);
     }
