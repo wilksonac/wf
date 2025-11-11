@@ -1,7 +1,7 @@
 // js/main.js
 
 // ######################################################
-// ARQUIVO 7: O CÉREBRO MESTRE (main.js)
+// ARQUIVO 7: O CÉREBRO MESTRE (main.js) - VERSÃO CORRIGIDA
 // ######################################################
 // Este arquivo conecta todos os módulos.
 
@@ -10,7 +10,7 @@ import { setupAuthListeners } from './auth.js';
 import * as store from './store.js'; // Importa *tudo* do store.js como um objeto
 import * as ui from './ui.js';       // Importa *tudo* do ui.js como um objeto
 import { initGeradorListeners } from './geradorContrato.js';
-import { initDragAndDrop } from './kanban.js'; // <-- AINDA VAMOS CRIAR ESTE ARQUIVO
+import { initDragAndDrop } from './kanban.js'; 
 
 // --- 2. DEFINE O ESTADO GLOBAL DA APLICAÇÃO ---
 let userId = null;
@@ -40,7 +40,7 @@ function onDataChange(newState) {
     ui.renderContratos(dbState);
     ui.renderFotografos(dbState);
     ui.renderFinanceiro(dbState);
-    ui.renderCustos(dbState);
+    ui.renderCustos(dbState); // Atualizado na Fase 1
     ui.renderCalendario(calendarioData, dbState);
     
     // Atualiza os selects
@@ -56,6 +56,13 @@ function onDataChange(newState) {
         ui.renderEntregaCards(evento, dbState);
     } else {
         ui.renderEntregasAtrasadas(dbState);
+    }
+    
+    // Atualiza a visão de Contas a Receber (Fase 2)
+    // Verifica se a seção financeira está ativa para renderizar
+    if (!document.getElementById('section-financeiro').classList.contains('hidden')) {
+        ui.renderContasAReceber(dbState);
+        // Na Fase 3, chamaremos o gráfico aqui
     }
 
     // Reativa os ícones do Lucide (essencial após re-renderizar)
@@ -105,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Inicia os "especialistas"
     setupAuthListeners(onLogin, onLogout);
     initGeradorListeners();
-    initDragAndDrop(); // <-- Esta função virá do kanban.js
+    initDragAndDrop(); 
     
     // --- IMPORTANTE: recria o objeto 'window.app' ---
     // O seu HTML usa onclick="window.app.funcao()".
@@ -133,15 +140,18 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         // Funções de Ação (chamam o Store)
-        // Funções de Ação (chamam o Store)
         deleteItem: (collectionName, id) => {
             if (!userId) return;
-            // Adapta a mensagem de confirmação
+            
             let message = `Tem certeza que deseja excluir este item?`;
             
+            // ######################
             // AQUI ESTAVA O ERRO (Corrigido de \N para \n)
-            if (collectionName === 'contratos') {
+            // ######################
+            if (collectionName === 'clientes' || collectionName === 'eventos') {
                 message += `\nNenhum contrato, evento ou pagamento associado será excluído.`;
+            } else if (collectionName === 'contratos') {
+                message += `\n\nATENÇÃO: Isso NÃO excluirá os pagamentos já feitos (no Histórico de Pagamentos).`;
             } else if (collectionName === 'financeiro') {
                 message = `Tem certeza que deseja excluir este PAGAMENTO? Esta ação não pode ser desfeita.`;
             }
@@ -163,8 +173,6 @@ document.addEventListener('DOMContentLoaded', () => {
             store.marcarEntregue(userId, eventId, tipo)
                 .catch(e => alert(e.message));
         }
-        // Adiciona esta linha no final do 'DOMContentLoaded' para setar a data de hoje
-        document.getElementById('custo-data').valueAsDate = new Date();
     };
 
     // --- 5. LISTENERS DE FORMULÁRIOS E CONTROLES DA UI ---
@@ -242,26 +250,26 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(e => alert(e.message));
     });
     
-    // ATUALIZAÇÃO AQUI: Adicionado 'data' ao objeto
-        document.getElementById('form-custo').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const data = {
-                data: e.target.elements['custo-data'].value, // <-- NOVO CAMPO
-                descricao: e.target.elements['custo-descricao'].value, 
-                valor: parseFloat(e.target.elements['custo-valor'].value), 
-                eventoId: e.target.elements['custo-evento'].value,
-                fotografoId: e.target.elements['custo-fotografo'].value
-            };
-            store.handleFormSubmit(userId, 'custos', data)
-                .then(() => {
-                    e.target.reset();
-                    // Reseta a data para hoje
-                    document.getElementById('custo-data').valueAsDate = new Date();
-                })
-                .catch(e => alert(e.message));
-        });
-
-
+    // ######################
+    // ATUALIZAÇÃO DA FASE 1 (Form de Custo)
+    // ######################
+    document.getElementById('form-custo').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const data = {
+            data: e.target.elements['custo-data'].value, // <-- CAMPO ADICIONADO
+            descricao: e.target.elements['custo-descricao'].value, 
+            valor: parseFloat(e.target.elements['custo-valor'].value), 
+            eventoId: e.target.elements['custo-evento'].value,
+            fotografoId: e.target.elements['custo-fotografo'].value
+        };
+        store.handleFormSubmit(userId, 'custos', data)
+            .then(() => {
+                e.target.reset();
+                // Reseta a data para hoje
+                document.getElementById('custo-data').valueAsDate = new Date();
+            })
+            .catch(e => alert(e.message));
+    });
     
     document.getElementById('form-nova-coluna').addEventListener('submit', (e) => {
         e.preventDefault();
@@ -339,12 +347,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     document.getElementById('mobile-menu-button').addEventListener('click', () => {
-        document.getElementById('sidebar').classList.toggle('-translate-x-full');
+        document.getElementById('sidebar').classList.toggle('-translatex-full');
     });
 
     // Seta a data padrão nos forms
     document.getElementById('contrato-data').valueAsDate = new Date();
     document.getElementById('payment-date').valueAsDate = new Date();
-
+    // Adicionado na Fase 1
+    document.getElementById('custo-data').valueAsDate = new Date();
 });
-
