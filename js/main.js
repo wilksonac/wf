@@ -119,6 +119,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // O seu HTML usa onclick="window.app.funcao()".
     // Este objeto faz a "ponte" entre o HTML e nossos módulos JS.
     window.app = {
+        editTemplate: (templateId) => {
+        if (!templateId) return;
+        const template = dbState.templates.find(t => t.id === templateId);
+        if (template) {
+            ui.populateTemplateForm(template);
+        }
+        },
+            clearTemplateForm: () => {
+            ui.clearTemplateForm();
+        },
         // Funções de Navegação e Modais (chamam a UI)
         showSection: (sectionId) => ui.showSection(sectionId, dbState, calendarioData),
         openDossieModal: (contratoId) => ui.openDossieModal(contratoId, dbState),
@@ -192,6 +202,22 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(() => e.target.reset()) // Limpa o form em caso de sucesso
             .catch(e => alert(e.message));
     });
+    document.getElementById('form-template').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const templateId = e.target.elements['template-id'].value; // Pega o ID (se estiver editando)
+    const data = {
+        titulo: e.target.elements['template-titulo'].value,
+        corpo: e.target.elements['template-corpo'].value
+    };
+
+    store.saveTemplate(userId, data, templateId || null)
+        .then(() => {
+            ui.clearTemplateForm(); // Limpa o formulário
+        })
+        .catch(e => {
+            alert("Falha ao salvar template: " + e.message);
+        });
+        });
 
     document.getElementById('form-evento').addEventListener('submit', (e) => {
         e.preventDefault();
@@ -357,4 +383,5 @@ document.addEventListener('DOMContentLoaded', () => {
     // Adicionado na Fase 1
     document.getElementById('custo-data').valueAsDate = new Date();
 });
+
 
