@@ -32,7 +32,7 @@ export function setupRealtimeListeners(userId, onDataChangeCallback) {
         financeiro: [], custos: [], colunas: []
     };
     
-    const collections = ['eventos', 'clientes', 'contratos', 'fotografos', 'financeiro', 'custos', 'colunas', 'templates']; // <-- ADICIONE 'templates'
+    const collections = ['eventos', 'clientes', 'contratos', 'fotografos', 'financeiro', 'custos', 'colunas', 'templates', 'pacotes']; // <-- ADICIONE 'pacotes'
     let unsubscribeListeners = [];
 
     collections.forEach(col => {
@@ -54,6 +54,13 @@ export function setupRealtimeListeners(userId, onDataChangeCallback) {
             }
             if (col === 'colunas') {
                 dbState.colunas.sort((a, b) => a.ordem - b.ordem);
+            }
+            if (col === 'pacotes') {
+            // Ordena por categoria e depois por nome
+            dbState.pacotes.sort((a, b) => 
+                a.package_category_name.localeCompare(b.package_category_name) || 
+                a.package_name.localeCompare(b.package_name)
+                );
             }
             
             // Envia o *estado completo* atualizado para o main.js
@@ -183,5 +190,24 @@ export async function saveTemplate(userId, templateData, templateId) {
         await addDoc(collection(db, `users/${userId}/templates`), templateData);
     }
 }
+//
+// ADICIONE ESTA NOVA FUNÇÃO NO FINAL DO store.js
+//
+/**
+ * Salva ou Atualiza um Pacote.
+ */
+export async function savePacote(userId, pacoteData, pacoteId) {
+    if (!userId) throw new Error("Usuário não autenticado.");
+
+    if (pacoteId) {
+        // Atualiza um pacote existente
+        const docRef = doc(db, `users/${userId}/pacotes/${pacoteId}`);
+        await updateDoc(docRef, pacoteData);
+    } else {
+        // Cria um novo pacote
+        await addDoc(collection(db, `users/${userId}/pacotes`), pacoteData);
+    }
+}
+
 
 
