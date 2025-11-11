@@ -160,6 +160,8 @@ document.addEventListener('DOMContentLoaded', () => {
             store.marcarEntregue(userId, eventId, tipo)
                 .catch(e => alert(e.message));
         }
+        // Adiciona esta linha no final do 'DOMContentLoaded' para setar a data de hoje
+        document.getElementById('custo-data').valueAsDate = new Date();
     };
 
     // --- 5. LISTENERS DE FORMULÁRIOS E CONTROLES DA UI ---
@@ -237,18 +239,26 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(e => alert(e.message));
     });
     
-    document.getElementById('form-custo').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const data = {
-            descricao: e.target.elements['custo-descricao'].value, 
-            valor: parseFloat(e.target.elements['custo-valor'].value), 
-            eventoId: e.target.elements['custo-evento'].value,
-            fotografoId: e.target.elements['custo-fotografo'].value
-        };
-        store.handleFormSubmit(userId, 'custos', data)
-            .then(() => e.target.reset())
-            .catch(e => alert(e.message));
-    });
+    // ATUALIZAÇÃO AQUI: Adicionado 'data' ao objeto
+        document.getElementById('form-custo').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const data = {
+                data: e.target.elements['custo-data'].value, // <-- NOVO CAMPO
+                descricao: e.target.elements['custo-descricao'].value, 
+                valor: parseFloat(e.target.elements['custo-valor'].value), 
+                eventoId: e.target.elements['custo-evento'].value,
+                fotografoId: e.target.elements['custo-fotografo'].value
+            };
+            store.handleFormSubmit(userId, 'custos', data)
+                .then(() => {
+                    e.target.reset();
+                    // Reseta a data para hoje
+                    document.getElementById('custo-data').valueAsDate = new Date();
+                })
+                .catch(e => alert(e.message));
+        });
+
+
     
     document.getElementById('form-nova-coluna').addEventListener('submit', (e) => {
         e.preventDefault();
@@ -332,4 +342,5 @@ document.addEventListener('DOMContentLoaded', () => {
     // Seta a data padrão nos forms
     document.getElementById('contrato-data').valueAsDate = new Date();
     document.getElementById('payment-date').valueAsDate = new Date();
+
 });
