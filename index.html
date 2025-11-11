@@ -695,7 +695,24 @@
                                     <label for="template-titulo" class="block text-sm font-medium text-gray-700 mb-1">Título do Template</label>
                                     <input type="text" id="template-titulo" placeholder="Ex: Contrato Festa Infantil (Pacote Ouro)" class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" required>
                                 </div>
-
+								<div class="mb-4">
+								    <label for="template-link-tipo" class="block text-sm font-medium text-gray-700 mb-1">1. Vincular ao "Tipo de Contrato"</label>
+								    <select id="template-link-tipo" class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+								        <option value="">Selecione o "Tipo" do Gerador...</option>
+								        <option value="1">Festa Infantil</option>
+								        <option value="6">Formatura Infantil</option>
+								        <option value="2">Casamento</option>
+								        <option value="3">Casamento Civil</option>
+								        <option value="4">Eventos em Geral</option>
+								        <option value="5">Entrada de Dados</option>
+								    </select>
+								</div>
+								
+								<div class="mb-4">
+								    <label for="template-link-pacote" class="block text-sm font-medium text-gray-700 mb-1">2. Vincular ao "Pacote" (Opcional)</label>
+								    <input type="text" id="template-link-pacote" placeholder="Ex: Diamante (4x de R$ 650,00)" class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+								    <p class="text-xs text-gray-500 mt-1">Deixe em branco se este tipo não usar pacotes (Ex: Eventos em Geral).</p>
+								</div>
                                 <div class="mb-4">
                                     <label for="template-corpo" class="block text-sm font-medium text-gray-700 mb-1">Corpo do Contrato</label>
                                     <textarea id="template-corpo" rows="25" class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm" placeholder="Cole aqui o texto do seu contrato..."></textarea>
