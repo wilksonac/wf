@@ -42,6 +42,7 @@ function onDataChange(newState) {
     ui.renderFinanceiro(dbState);
     ui.renderCustos(dbState);
     ui.renderCalendario(calendarioData, dbState);
+    ui.renderPacotes(dbState);
     
     // Atualiza os selects
     ui.populateEventoClienteSelect(dbState);
@@ -426,6 +427,7 @@ document.getElementById('form-pacote').addEventListener('submit', (e) => {
     document.getElementById('payment-date').valueAsDate = new Date();
     document.getElementById('custo-data').valueAsDate = new Date();
 });
+
 
 
 
