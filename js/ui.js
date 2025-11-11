@@ -1203,3 +1203,80 @@ export function clearTemplateForm() {
     document.getElementById('form-template').reset();
     document.getElementById('template-id').value = ''; // Garante que o ID oculto está limpo
 }
+/**
+ * Renderiza a lista de pacotes salvos, agrupados por categoria.
+ */
+export function renderPacotes(dbState) {
+    const container = document.getElementById('lista-pacotes-container');
+    if (!container) return;
+
+    if (dbState.pacotes.length === 0) {
+        container.innerHTML = '<p class="text-gray-500">Nenhum pacote cadastrado.</p>';
+        return;
+    }
+
+    // 1. Agrupa os pacotes por categoria
+    const pacotesAgrupados = dbState.pacotes.reduce((acc, pacote) => {
+        const category = pacote.package_category_name || "Sem Categoria";
+        if (!acc[category]) {
+            acc[category] = [];
+        }
+        acc[category].push(pacote);
+        return acc;
+    }, {});
+
+    // 2. Renderiza o HTML
+    container.innerHTML = Object.keys(pacotesAgrupados).map(categoryName => {
+
+        // Renderiza os itens (pacotes) para esta categoria
+        const itemsHtml = pacotesAgrupados[categoryName].map(pacote => {
+            const valorFormatado = (pacote.package_value || 0).toFixed(2).replace('.', ',');
+
+            return `
+                <div class="flex justify-between items-center p-2 border-t">
+                    <div>
+                        <span class="font-medium text-sm text-gray-700">${pacote.package_name}</span>
+                        <span class="ml-2 text-sm text-green-700 font-bold">R$ ${valorFormatado}</span>
+                    </div>
+                    <div class="flex-shrink-0 flex gap-2 ml-2">
+                        <button onclick="window.app.editPacote('${pacote.id}')" class="text-blue-500 hover:text-blue-700" title="Editar">
+                            <i data-lucide="edit-2" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="window.app.deleteItem('pacotes', '${pacote.id}')" class="text-red-500 hover:text-red-700" title="Excluir">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Retorna o bloco da categoria
+        return `
+            <div class="border border-gray-200 rounded-lg overflow-hidden">
+                <h3 class="text-lg font-bold text-gray-900 bg-gray-50 p-3 border-b">${categoryName}</h3>
+                <div class="space-y-1">
+                    ${itemsHtml}
+                </div>
+            </div>
+        `;
+
+    }).join('');
+}
+
+/**
+ * Preenche o formulário de pacote para edição.
+ */
+export function populatePacoteForm(pacote) {
+    document.getElementById('pacote-id').value = pacote.id;
+    document.getElementById('pacote-tipo-vinculo').value = pacote.package_category_id || '';
+    document.getElementById('pacote-nome').value = pacote.package_name || '';
+    document.getElementById('pacote-valor').value = pacote.package_value || 0;
+}
+
+/**
+ * Limpa o formulário de pacote.
+ */
+export function clearPacoteForm() {
+    document.getElementById('form-pacote').reset();
+    document.getElementById('pacote-id').value = ''; 
+}
