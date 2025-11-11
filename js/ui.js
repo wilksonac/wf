@@ -347,23 +347,29 @@ export function renderFinanceiro(dbState) {
         }).join('');
 }
 
-export function renderCustos(dbState) {
-    const lista = document.getElementById('lista-custos');
-    lista.innerHTML = dbState.custos.length === 0
-        ? '<tr><td colspan="5" class="p-4 text-center text-gray-500">Nenhum custo cadastrado.</td></tr>'
-        : dbState.custos.map(item => {
-            const evento = dbState.eventos.find(e => e.id === item.eventoId);
-            const fotografo = dbState.fotografos.find(f => f.id === item.fotografoId);
-            const valor = parseFloat(item.valor) || 0;
-            return `<tr class="border-b hover:bg-gray-50">
-                <td class="p-4">${item.descricao}</td>
-                <td class="p-4">${evento ? evento.nome : 'Evento não encontrado'}</td>
-                <td class="p-4">${fotografo ? fotografo.nome : 'N/A'}</td>
-                <td class="p-4">R$ ${valor.toFixed(2).replace('.', ',')}</td>
-                <td class="p-4"><button onclick="window.app.deleteItem('custos', '${item.id}')" class="text-red-500 hover:text-red-700" title="Excluir Custo"><i data-lucide="trash-2" class="w-5 h-5"></i></button></td>
-            </tr>`;
-        }).join('');
-}
+        // ATUALIZAÇÃO AQUI: Adicionada data e colspan="6"
+        export function renderCustos(dbState) {
+            const lista = document.getElementById('lista-custos');
+            lista.innerHTML = dbState.custos.length === 0
+                ? '<tr><td colspan="6" class="p-4 text-center text-gray-500">Nenhum custo cadastrado.</td></tr>'
+                : dbState.custos.map(item => {
+                    const evento = dbState.eventos.find(e => e.id === item.eventoId);
+                    const fotografo = dbState.fotografos.find(f => f.id === item.fotografoId);
+                    const valor = parseFloat(item.valor) || 0;
+                    const dataFormatada = item.data 
+                        ? new Date(item.data + 'T00:00:00').toLocaleDateString('pt-BR') 
+                        : 'Sem data';
+        
+                    return `<tr class="border-b hover:bg-gray-50">
+                        <td class="p-4">${dataFormatada}</td>
+                        <td class="p-4">${item.descricao}</td>
+                        <td class="p-4">${evento ? evento.nome : 'Evento não encontrado'}</td>
+                        <td class="p-4">${fotografo ? fotografo.nome : 'N/A'}</td>
+                        <td class="p-4">R$ ${valor.toFixed(2).replace('.', ',')}</td>
+                        <td class="p-4"><button onclick="window.app.deleteItem('custos', '${item.id}')" class="text-red-500 hover:text-red-700" title="Excluir Custo"><i data-lucide="trash-2" class="w-5 h-5"></i></button></td>
+                    </tr>`;
+                }).join('');
+        }
 
 
 // --- 3. RENDERIZAÇÃO DO CALENDÁRIO ---
@@ -953,3 +959,4 @@ export function hideLoginError() {
     document.getElementById('login-error').classList.add('hidden');
 
 }
+
