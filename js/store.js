@@ -164,4 +164,24 @@ export async function updateContrato(userId, contratoId, dataToUpdate) {
     }
 
 }
+// ADICIONE ESTA NOVA FUNÇÃO NO FINAL DO store.js
+//
+/**
+ * Salva ou Atualiza um Template de Contrato.
+ * Se o templateId for nulo, cria um novo doc.
+ * Se o templateId existir, atualiza (setDoc) o doc existente.
+ */
+export async function saveTemplate(userId, templateData, templateId) {
+    if (!userId) throw new Error("Usuário não autenticado.");
+
+    if (templateId) {
+        // Atualiza um template existente
+        const docRef = doc(db, `users/${userId}/templates/${templateId}`);
+        await updateDoc(docRef, templateData);
+    } else {
+        // Cria um novo template
+        await addDoc(collection(db, `users/${userId}/templates`), templateData);
+    }
+}
+
 
