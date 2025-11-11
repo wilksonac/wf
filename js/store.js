@@ -23,26 +23,32 @@ import {
  * @param {function} onDataChangeCallback - A função no main.js a ser chamada sempre que os dados mudarem.
  * @returns {Array<function>} - Um array de funções 'unsubscribe' para parar os listeners.
  */
+// js/store.js
+
+//
+// SUBSTITUA A FUNÇÃO 'setupRealtimeListeners' INTEIRA POR ESTA
+//
 export function setupRealtimeListeners(userId, onDataChangeCallback) {
     if (!userId) return [];
 
-    // Objeto de estado local que será enviado para o callback
+    // ######################
+    // CORREÇÃO 1: Faltava "pacotes: []" aqui.
+    // ######################
     const dbState = { 
         eventos: [], clientes: [], contratos: [], fotografos: [], 
-        financeiro: [], custos: [], colunas: []
+        financeiro: [], custos: [], colunas: [], templates: [], pacotes: [] 
     };
     
-    const collections = ['eventos', 'clientes', 'contratos', 'fotografos', 'financeiro', 'custos', 'colunas', 'templates', 'pacotes']; // <-- ADICIONE 'pacotes'
+    const collections = ['eventos', 'clientes', 'contratos', 'fotografos', 'financeiro', 'custos', 'colunas', 'templates', 'pacotes'];
     let unsubscribeListeners = [];
 
     collections.forEach(col => {
         const collectionPath = `users/${userId}/${col}`;
         const unsub = onSnapshot(collection(db, collectionPath), (querySnapshot) => {
             
-            // Atualiza a parte do estado correspondente a esta coleção
             dbState[col] = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-            // Aplica ordenação específica (lógica do seu código original)
+            // Aplica ordenação específica
             if (col === 'clientes') {
                 dbState.clientes.sort((a, b) => a.nome.localeCompare(b.nome));
             }
@@ -55,15 +61,24 @@ export function setupRealtimeListeners(userId, onDataChangeCallback) {
             if (col === 'colunas') {
                 dbState.colunas.sort((a, b) => a.ordem - b.ordem);
             }
+            
+            // ######################
+            // CORREÇÃO 2: Lógica de ordenação dos pacotes (movida para cá)
+            // ######################
             if (col === 'pacotes') {
-            // Ordena por categoria e depois por nome
-            dbState.pacotes.sort((a, b) => 
-                a.package_category_name.localeCompare(b.package_category_name) || 
-                a.package_name.localeCompare(b.package_name)
-                );
+                dbState.pacotes.sort((a, b) => {
+                    const catA = a.package_category_name || '';
+                    const catB = b.package_category_name || '';
+                    const nameA = a.package_name || '';
+                    const nameB = b.package_name || '';
+                    
+                    if (catA !== catB) {
+                        return catA.localeCompare(catB);
+                    }
+                    return nameA.localeCompare(nameB);
+                });
             }
             
-            // Envia o *estado completo* atualizado para o main.js
             onDataChangeCallback(dbState);
         });
         
@@ -208,6 +223,7 @@ export async function savePacote(userId, pacoteData, pacoteId) {
         await addDoc(collection(db, `users/${userId}/pacotes`), pacoteData);
     }
 }
+
 
 
 
