@@ -130,6 +130,12 @@ document.addEventListener('DOMContentLoaded', () => {
             clearTemplateForm: () => {
             ui.clearTemplateForm();
         },
+        getDbState: () => {
+            return dbState; // Expõe o estado atual para o gerador
+        },
+
+        // Funções de Ação (chamam o Store)
+        deleteItem: (collectionName, id) => {
         // Funções de Navegação e Modais (chamam a UI)
         showSection: (sectionId) => ui.showSection(sectionId, dbState, calendarioData),
         openDossieModal: (contratoId) => ui.openDossieModal(contratoId, dbState),
@@ -395,6 +401,7 @@ document.getElementById('form-template').addEventListener('submit', (e) => {
     // Adicionado na Fase 1
     document.getElementById('custo-data').valueAsDate = new Date();
 });
+
 
 
 
