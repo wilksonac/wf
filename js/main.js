@@ -103,7 +103,7 @@ function onLogout() {
     unsubscribeListeners = [];
     
     // Limpa o estado e re-renderiza a tela (vazia)
-    dbState = { eventos: [], clientes: [], contratos: [], fotografos: [], financeiro: [], custos: [], colunas: [], templates: [] }; // Adicionado 'templates'
+    dbState = { eventos: [], clientes: [], contratos: [], fotografos: [], financeiro: [], custos: [], colunas: [], templates: [], pacotes: [] }; // Adicionado 'templates'
     onDataChange(dbState); 
 }
 
@@ -392,4 +392,5 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('payment-date').valueAsDate = new Date();
     document.getElementById('custo-data').valueAsDate = new Date();
 });
+
 
