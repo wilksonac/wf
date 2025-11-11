@@ -31,7 +31,7 @@ export function setupRealtimeListeners(userId, onDataChangeCallback) {
         financeiro: [], custos: [], colunas: []
     };
     
-    const collections = ['eventos', 'clientes', 'contratos', 'fotografos', 'financeiro', 'custos', 'colunas'];
+    const collections = ['eventos', 'clientes', 'contratos', 'fotografos', 'financeiro', 'custos', 'colunas', 'templates']; // <-- ADICIONE 'templates'
     let unsubscribeListeners = [];
 
     collections.forEach(col => {
@@ -161,4 +161,5 @@ export async function updateContrato(userId, contratoId, dataToUpdate) {
         console.error("Erro ao atualizar contrato: ", error);
         throw new Error("Falha ao atualizar o contrato.");
     }
+
 }
