@@ -16,7 +16,7 @@ import { initDragAndDrop } from './kanban.js';
 let userId = null;
 let dbState = { 
     eventos: [], clientes: [], contratos: [], fotografos: [], 
-    financeiro: [], custos: [], colunas: []
+    financeiro: [], custos: [], colunas: [], templates: []
 };
 let unsubscribeListeners = []; // Array para guardar as funções 'unsubscribe' do Firestore
 let calendarioData = new Date(); // Controla o mês/ano do calendário
@@ -102,7 +102,7 @@ function onLogout() {
     unsubscribeListeners = [];
     
     // Limpa o estado e re-renderiza a tela (vazia)
-    dbState = { eventos: [], clientes: [], contratos: [], fotografos: [], financeiro: [], custos: [], colunas: [] };
+    dbState = { eventos: [], clientes: [], contratos: [], fotografos: [], financeiro: [], custos: [], colunas: [], templates: [] };
     onDataChange(dbState); 
 }
 
@@ -357,3 +357,4 @@ document.addEventListener('DOMContentLoaded', () => {
     // Adicionado na Fase 1
     document.getElementById('custo-data').valueAsDate = new Date();
 });
+
