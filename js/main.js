@@ -156,7 +156,18 @@ document.addEventListener('DOMContentLoaded', () => {
         // ######################
         // AQUI ESTAVA O ERRO (vírgula adicionada em clearTemplateForm)
         // ######################
-        
+        // ADICIONE ESTAS DUAS FUNÇÕES
+            //
+            editPacote: (pacoteId) => {
+                if (!pacoteId) return;
+                const pacote = dbState.pacotes.find(p => p.id === pacoteId);
+                if (pacote) {
+                    ui.populatePacoteForm(pacote);
+                }
+            },
+            clearPacoteForm: () => {
+                ui.clearPacoteForm();
+            },
         // "Função-Ponte" para o Gerador
         getDbState: () => {
             return dbState; // Expõe o estado atual para o gerador
@@ -392,5 +403,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('payment-date').valueAsDate = new Date();
     document.getElementById('custo-data').valueAsDate = new Date();
 });
+
 
 
