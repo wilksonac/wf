@@ -329,27 +329,61 @@ document.addEventListener('DOMContentLoaded', () => {
             link_pacote: e.target.elements['template-link-pacote'].value
         };
         // Novo Formulário de Pacote
+// Novo Formulário de Pacote (Com Debugging)
 document.getElementById('form-pacote').addEventListener('submit', (e) => {
     e.preventDefault();
-    const pacoteId = e.target.elements['pacote-id'].value;
-    const select = e.target.elements['pacote-tipo-vinculo'];
-    const category_id = select.value;
-    const category_name = select.options[select.selectedIndex].text; // Pega o NOME (ex: "Festa Infantil")
+    console.log("Formulário 'form-pacote' enviado."); // Log 1
 
-    const data = {
-        package_category_id: category_id,
-        package_category_name: category_name,
-        package_name: e.target.elements['pacote-nome'].value,
-        package_value: parseFloat(e.target.elements['pacote-valor'].value)
-    };
+    try {
+        const pacoteId = e.target.elements['pacote-id'].value;
+        const select = e.target.elements['pacote-tipo-vinculo'];
 
-    store.savePacote(userId, data, pacoteId || null)
-        .then(() => {
-            ui.clearPacoteForm();
-        })
-        .catch(e => {
-            alert("Falha ao salvar pacote: " + e.message);
-        });
+        if (!select) {
+            throw new Error("Elemento 'pacote-tipo-vinculo' (o select) não foi encontrado.");
+        }
+        if (select.selectedIndex === -1) {
+             throw new Error("Nenhuma categoria foi selecionada.");
+        }
+
+        const category_id = select.value;
+        const category_name = select.options[select.selectedIndex].text;
+        
+        const nomeEl = e.target.elements['pacote-nome'];
+        const valorEl = e.target.elements['pacote-valor'];
+
+        if (!nomeEl || !valorEl) {
+            throw new Error("Elemento 'pacote-nome' ou 'pacote-valor' não foi encontrado.");
+        }
+
+        const data = {
+            package_category_id: category_id,
+            package_category_name: category_name,
+            package_name: nomeEl.value,
+            package_value: parseFloat(valorEl.value)
+        };
+
+        if (isNaN(data.package_value)) {
+            throw new Error("O valor do pacote não é um número válido.");
+        }
+        
+        console.log("Salvando pacote com estes dados:", data); // Log 2
+
+        store.savePacote(userId, data, pacoteId || null)
+            .then(() => {
+                console.log("Pacote salvo com sucesso, limpando formulário."); // Log 3
+                ui.clearPacoteForm();
+            })
+            .catch(e => {
+                // Erro na *promessa* (ex: falha no Firestore)
+                console.error("Erro ao salvar pacote (Promise Catch):", e);
+                alert("Falha ao salvar pacote: " + e.message);
+            });
+
+    } catch (error) {
+        // Erro *síncrono* (ex: 'undefined.text')
+        console.error("Erro SÍNCRONO no listener do 'form-pacote':", error);
+        alert("Erro interno ao tentar salvar: " + error.message);
+    }
 });
 
         store.saveTemplate(userId, data, templateId || null)
@@ -427,6 +461,7 @@ document.getElementById('form-pacote').addEventListener('submit', (e) => {
     document.getElementById('payment-date').valueAsDate = new Date();
     document.getElementById('custo-data').valueAsDate = new Date();
 });
+
 
 
 
