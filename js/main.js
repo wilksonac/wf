@@ -357,4 +357,69 @@ document.addEventListener('DOMContentLoaded', () => {
     // Adicionado na Fase 1
     document.getElementById('custo-data').valueAsDate = new Date();
 });
+<div id="section-templates" class="content-section hidden">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">Editor de Templates de Contrato</h1>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-md">
+            <form id="form-template">
+                <input type="hidden" id="template-id"> <div class="mb-4">
+                    <label for="template-titulo" class="block text-sm font-medium text-gray-700 mb-1">Título do Template</label>
+                    <input type="text" id="template-titulo" placeholder="Ex: Contrato Festa Infantil (Pacote Ouro)" class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                </div>
+
+                <div class="mb-4">
+                    <label for="template-corpo" class="block text-sm font-medium text-gray-700 mb-1">Corpo do Contrato</label>
+                    <textarea id="template-corpo" rows="25" class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm" placeholder="Cole aqui o texto do seu contrato..."></textarea>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <button type="submit" class="bg-green-500 text-white px-5 py-2 rounded hover:bg-green-600 transition">Salvar Template</button>
+                    <button type="button" onclick="window.app.clearTemplateForm()" class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500 transition">Cancelar / Novo</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="space-y-6">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-lg font-bold text-gray-800 mb-3">Templates Salvos</h3>
+                <div id="lista-templates" class="max-h-60 overflow-y-auto space-y-2">
+                    </div>
+            </div>
+            
+            <div class="bg-blue-50 p-5 rounded-lg shadow-inner">
+                <h3 class="text-lg font-bold text-blue-800 mb-3">Placeholders Disponíveis</h3>
+                <p class="text-sm text-blue-700 mb-3">
+                    Use os placeholders abaixo no corpo do seu contrato. Eles serão substituídos pelos dados do formulário.
+                </p>
+                <div class="space-y-1 text-sm font-mono text-blue-900">
+                    <p><strong>{{clientName}}</strong> - Nome do Cliente</p>
+                    <p><strong>{{clientCPF}}</strong> - CPF do Cliente</p>
+                    <p><strong>{{clientRG}}</strong> - RG do Cliente</p>
+                    <p><strong>{{clientAddress}}</strong> - Endereço do Cliente</p>
+                    <p><strong>{{clientEmail}}</strong> - Email do Cliente</p>
+                    <p><strong>{{clientPhone}}</strong> - Telefone do Cliente</p>
+                    <p><strong>{{eventDate}}</strong> - Data do Evento</p>
+                    <p><strong>{{eventTime}}</strong> - Hora do Evento</p>
+                    <p><strong>{{eventDuration}}</strong> - Duração (Horas)</p>
+                    <p><strong>{{eventLocal}}</strong> - Local do Evento</p>
+                    <p><strong>{{value}}</strong> - Valor Total (R$)</p>
+                    <p><strong>{{paymentMethod}}</strong> - Forma de Pagamento</p>
+                    <p><strong>{{package}}</strong> - Descrição do Pacote</p>
+                    <p><strong>{{rules}}</strong> - Cláusulas Adicionais</p>
+                    <p><strong>{{studentName}}</strong> - Nome do Formando</p>
+                    <p><strong>{{studentClass}}</strong> - Turma do Formando</p>
+                    <p><strong>{{imageRights}}</strong> - (Lógica na Fase 2)</p>
+                    <p><strong>{{contratadoName}}</strong> - (Seu Nome)</p>
+                    <p><strong>{{contratadoCPF}}</strong> - (Seu CPF)</p>
+                    <p><strong>{{contratadoAddress}}</strong> - (Seu Endereço)</p>
+                    <p><strong>{{currentDate}}</strong> - (Data de Hoje)</p>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+</div>
+
 
