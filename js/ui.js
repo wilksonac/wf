@@ -1196,6 +1196,9 @@ export function populateTemplateForm(template) {
 /**
  * Limpa o formulário de template (para modo "Novo" ou após salvar).
  */
+/**
+ * Limpa o formulário de template (para modo "Novo" ou após salvar).
+ */
 export function clearTemplateForm() {
     document.getElementById('form-template').reset();
     document.getElementById('template-id').value = ''; // Garante que o ID oculto está limpo
