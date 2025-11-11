@@ -62,6 +62,7 @@ function onDataChange(newState) {
     // Verifica se a seção financeira está ativa para renderizar
     if (!document.getElementById('section-financeiro').classList.contains('hidden')) {
         ui.renderContasAReceber(dbState);
+        ui.renderFluxoDeCaixaChart(dbState);
         // Na Fase 3, chamaremos o gráfico aqui
     }
 
@@ -356,3 +357,4 @@ document.addEventListener('DOMContentLoaded', () => {
     // Adicionado na Fase 1
     document.getElementById('custo-data').valueAsDate = new Date();
 });
+
