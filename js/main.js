@@ -327,6 +327,29 @@ document.addEventListener('DOMContentLoaded', () => {
             link_tipo: e.target.elements['template-link-tipo'].value,
             link_pacote: e.target.elements['template-link-pacote'].value
         };
+        // Novo Formulário de Pacote
+document.getElementById('form-pacote').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const pacoteId = e.target.elements['pacote-id'].value;
+    const select = e.target.elements['pacote-tipo-vinculo'];
+    const category_id = select.value;
+    const category_name = select.options[select.selectedIndex].text; // Pega o NOME (ex: "Festa Infantil")
+
+    const data = {
+        package_category_id: category_id,
+        package_category_name: category_name,
+        package_name: e.target.elements['pacote-nome'].value,
+        package_value: parseFloat(e.target.elements['pacote-valor'].value)
+    };
+
+    store.savePacote(userId, data, pacoteId || null)
+        .then(() => {
+            ui.clearPacoteForm();
+        })
+        .catch(e => {
+            alert("Falha ao salvar pacote: " + e.message);
+        });
+});
 
         store.saveTemplate(userId, data, templateId || null)
             .then(() => {
@@ -403,6 +426,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('payment-date').valueAsDate = new Date();
     document.getElementById('custo-data').valueAsDate = new Date();
 });
+
 
 
 
