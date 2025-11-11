@@ -13,7 +13,8 @@ import {
     onSnapshot, 
     doc, 
     deleteDoc, 
-    updateDoc 
+    updateDoc, 
+    setDoc
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 /**
@@ -163,3 +164,4 @@ export async function updateContrato(userId, contratoId, dataToUpdate) {
     }
 
 }
+
