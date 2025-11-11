@@ -248,6 +248,121 @@ export function renderClientes(dbState) {
 //
 // ADICIONE ESTA NOVA FUNÇÃO no js/ui.js
 //
+//
+// ADICIONE ESTA NOVA FUNÇÃO no js/ui.js
+//
+export function renderFluxoDeCaixaChart(dbState) {
+    const ctx = document.getElementById('fluxo-caixa-chart');
+    if (!ctx) return; // Sai se o canvas não existir
+
+    // --- 1. Preparar os dados ---
+    const labels = [];
+    const receitasData = new Array(12).fill(0);
+    const custosData = new Array(12).fill(0);
+    
+    const hoje = new Date();
+    hoje.setDate(1); // Garante que estamos no primeiro dia do mês
+
+    // Cria os labels dos últimos 12 meses (ex: "Nov/24", "Dez/24", "Jan/25"...)
+    for (let i = 11; i >= 0; i--) {
+        const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+        labels.push(d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }));
+    }
+
+    const dataLimiteInferior = new Date(hoje.getFullYear(), hoje.getMonth() - 11, 1);
+    
+    // --- 2. Processar Receitas (Financeiro) ---
+    dbState.financeiro.forEach(item => {
+        if (!item.data) return;
+        const dataPagamento = new Date(item.data + 'T00:00:00');
+        
+        if (dataPagamento >= dataLimiteInferior) {
+            const mesDiff = (dataPagamento.getFullYear() - hoje.getFullYear()) * 12 + (dataPagamento.getMonth() - hoje.getMonth());
+            const index = 11 + mesDiff; // 11 é o índice do mês atual
+            
+            if (index >= 0 && index < 12) {
+                receitasData[index] += parseFloat(item.valor || 0);
+            }
+        }
+    });
+
+    // --- 3. Processar Custos ---
+    dbState.custos.forEach(item => {
+        if (!item.data) return;
+        const dataCusto = new Date(item.data + 'T00:00:00');
+        
+        if (dataCusto >= dataLimiteInferior) {
+            const mesDiff = (dataCusto.getFullYear() - hoje.getFullYear()) * 12 + (dataCusto.getMonth() - hoje.getMonth());
+            const index = 11 + mesDiff;
+            
+            if (index >= 0 && index < 12) {
+                custosData[index] += parseFloat(item.valor || 0);
+            }
+        }
+    });
+
+    // --- 4. Renderizar o Gráfico ---
+    
+    // IMPORTANTE: Destrói o gráfico anterior se ele existir
+    if (myFluxoChart) {
+        myFluxoChart.destroy();
+    }
+
+    // Cria o novo gráfico
+    myFluxoChart = new Chart(ctx.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Recebido (R$)',
+                    data: receitasData,
+                    backgroundColor: 'rgba(59, 130, 246, 0.7)', // Azul
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Custos (R$)',
+                    data: custosData,
+                    backgroundColor: 'rgba(239, 68, 68, 0.7)', // Vermelho
+                    borderColor: 'rgba(239, 68, 68, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        // Formata o eixo Y como R$
+                        callback: function(value, index, values) {
+                            return 'R$ ' + value.toLocaleString('pt-BR');
+                        }
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += 'R$ ' + context.parsed.y.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                            }
+                            return label;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
 export function renderContasAReceber(dbState) {
     const lista = document.getElementById('lista-contas-a-receber');
     if (!lista) return;
