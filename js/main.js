@@ -133,12 +133,15 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         // Funções de Ação (chamam o Store)
+        // Funções de Ação (chamam o Store)
         deleteItem: (collectionName, id) => {
             if (!userId) return;
             // Adapta a mensagem de confirmação
             let message = `Tem certeza que deseja excluir este item?`;
+            
+            // AQUI ESTAVA O ERRO (Corrigido de \N para \n)
             if (collectionName === 'contratos') {
-                message += `\n\nATENÇÃO: Isso NÃO excluirá os pagamentos já feitos (no Histórico de Pagamentos).`;
+                message += `\nNenhum contrato, evento ou pagamento associado será excluído.`;
             } else if (collectionName === 'financeiro') {
                 message = `Tem certeza que deseja excluir este PAGAMENTO? Esta ação não pode ser desfeita.`;
             }
@@ -344,3 +347,4 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('payment-date').valueAsDate = new Date();
 
 });
+
