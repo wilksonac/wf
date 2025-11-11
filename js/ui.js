@@ -1214,7 +1214,7 @@ export function renderPacotes(dbState) {
     const container = document.getElementById('lista-pacotes-container');
     if (!container) return;
 
-    if (dbState.pacotes.length === 0) {
+  if (!dbState.pacotes || dbState.pacotes.length === 0) {
         container.innerHTML = '<p class="text-gray-500">Nenhum pacote cadastrado.</p>';
         return;
     }
