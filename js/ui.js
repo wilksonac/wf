@@ -154,7 +154,7 @@ export function renderKanban(dbState) {
     board.innerHTML = ''; 
 
     if (colunasOrdenadas.length === 0) {
-        board.innerHTML = `<p class="text-gray-500 p-4">Nenhuma coluna Kanban foi criada.</p>`;
+        board.innerHTML = `<p class="text-gray-500 p-4">Nenhuma coluna Kanban foi criada. Adicione uma acima.</p>`;
         return;
     }
 
@@ -191,7 +191,6 @@ export function renderKanban(dbState) {
                 </div>
                 <p class="text-gray-600 mt-2"><i data-lucide="calendar" class="inline-block w-4 h-4 mr-1"></i> ${dataFormatada}</p>
                 <p class="text-gray-600 mt-1"><i data-lucide="map-pin" class="inline-block w-4 h-4 mr-1"></i> ${evento.local || 'Local a definir'}</p>
-                <p class="text-gray-500 mt-2 text-sm">${evento.descricao || 'Sem detalhes definidos.'}</p>
                 <div class="mt-4 flex items-center gap-3">
                     <button onclick="window.app.openDossieModalFromEvento('${evento.id}')" class="text-blue-500 hover:text-blue-700" title="Ver Dossiê">
                         <i data-lucide="eye" class="w-5 h-5"></i>
@@ -207,15 +206,29 @@ export function renderKanban(dbState) {
             cardsHtml = `<div class="text-center text-gray-400 text-sm p-4">Arraste eventos para cá</div>`;
         }
 
+        // Cabeçalho da Coluna com Botões de Ação
         colunaEl.innerHTML = `
-            <h3 class="kanban-column-title">${coluna.nome} (${eventosDaColuna.length})</h3>
-            <div class="kanban-cards space-y-3" data-coluna-id="${coluna.id}">
+            <div class="kanban-column-title flex justify-between items-center bg-gray-200 rounded-t-lg px-4 py-3">
+                <span class="font-bold text-gray-700">${coluna.nome} <span class="text-sm font-normal text-gray-500">(${eventosDaColuna.length})</span></span>
+                <div class="flex gap-2">
+                    <button onclick="window.app.editColumn('${coluna.id}', '${coluna.nome}')" class="text-gray-500 hover:text-blue-600" title="Renomear Coluna">
+                        <i data-lucide="edit-2" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="window.app.deleteItem('colunas', '${coluna.id}')" class="text-gray-500 hover:text-red-600" title="Excluir Coluna">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="kanban-cards space-y-3 p-3" data-coluna-id="${coluna.id}">
                 ${cardsHtml}
             </div>
         `;
         
         board.appendChild(colunaEl);
     });
+    
+    // Recarrega os ícones
+    if (window.lucide) window.lucide.createIcons();
 }
 
 export function renderClientes(dbState) {
