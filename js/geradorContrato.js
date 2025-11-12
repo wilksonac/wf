@@ -1,7 +1,7 @@
 // js/geradorContrato.js
 
 // ######################################################
-// ARQUIVO 3: LÓGICA DO GERADOR DE CONTRATO (SEM TEXTO RÁPIDO)
+// ARQUIVO 3: LÓGICA DO GERADOR (SEM ABAS - CORRIGIDO)
 // ######################################################
 
 // Pega os dados do formulário HTML
@@ -23,7 +23,6 @@ function getFormData() {
     // Pega o pacote do SELECT ÚNICO
     const packageSelect = document.getElementById('contractPackage');
     if (packageSelect && packageSelect.value) {
-        // Mapeia para as chaves antigas para manter a compatibilidade
         const contractType = document.getElementById('contractType').value;
         if (contractType === '1') data.infantilPackage = packageSelect.value;
         if (contractType === '2') data.weddingPackage = packageSelect.value;
@@ -48,7 +47,7 @@ function generateContractText(formData, dbState) {
         case '7': selectedPackage = formData.ensaioPackage; break;
     }
     
-    // Busca o template no banco de dados (dbState.templates)
+    // Busca o template no banco de dados
     const template = dbState.templates.find(t => 
         t.link_tipo === contractType && 
         t.link_pacote === selectedPackage
@@ -113,71 +112,93 @@ export function initGeradorListeners() {
     const outputSection = document.getElementById('outputSection');
     const contractOutput = document.getElementById('contractOutput');
 
-    // --- Listener do Botão Gerar ---
-    generateButton.addEventListener('click', () => {
-        if (!contractForm.checkValidity()) {
-            contractForm.reportValidity();
-            outputSection.classList.remove('hidden');
-            contractOutput.innerHTML = `<p style="color: red; text-align:center">Preencha os campos obrigatórios.</p>`;
-            return;
-        }
-        
-        const formData = getFormData(); 
-        // Usa o helper do main.js para pegar o estado atual
-        const contractHTML = generateContractText(formData, window.app.getDbState());
-        
-        contractOutput.innerHTML = contractHTML;
-        outputSection.classList.remove('hidden');
-        outputSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
+    // --- CORREÇÃO: REMOVIDOS LISTENERS DAS ABAS ANTIGAS (tabForm, tabText) ---
+    
+    // Listener do Botão Gerar
+    if (generateButton) {
+        generateButton.addEventListener('click', () => {
+            if (!contractForm.checkValidity()) {
+                contractForm.reportValidity();
+                outputSection.classList.remove('hidden');
+                contractOutput.innerHTML = `<p style="color: red; text-align:center">Preencha os campos obrigatórios.</p>`;
+                return;
+            }
+            
+            const formData = getFormData(); 
+            
+            // SEGURANÇA: Verifica se window.app e getDbState existem antes de chamar
+            if (window.app && window.app.getDbState) {
+                const contractHTML = generateContractText(formData, window.app.getDbState());
+                contractOutput.innerHTML = contractHTML;
+                outputSection.classList.remove('hidden');
+                outputSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                console.error("window.app.getDbState não está disponível.");
+            }
+        });
+    }
 
-    document.getElementById('copyButton').addEventListener('click', () => {
-        const textToCopy = contractOutput.innerText || contractOutput.textContent;
-        navigator.clipboard.writeText(textToCopy);
-    });
+    // Botão Copiar
+    const copyBtn = document.getElementById('copyButton');
+    if (copyBtn) {
+        copyBtn.addEventListener('click', () => {
+            const textToCopy = contractOutput.innerText || contractOutput.textContent;
+            navigator.clipboard.writeText(textToCopy);
+        });
+    }
 
-    document.getElementById('printButton').addEventListener('click', () => window.print());
+    // Botão Imprimir
+    const printBtn = document.getElementById('printButton');
+    if (printBtn) {
+        printBtn.addEventListener('click', () => window.print());
+    }
 
     // --- LISTENER DINÂMICO DO TIPO DE CONTRATO ---
     const contractTypeSelect = document.getElementById('contractType');
     
-    contractTypeSelect.addEventListener('change', (e) => {
-        const eventDetails = document.getElementById('eventDetails');
-        const packageSection = document.getElementById('dynamicPackageSection'); 
-        const clientNameLabel = document.getElementById('clientNameLabel');
-        
-        packageSection.classList.add('hidden');
-        eventDetails.classList.remove('hidden');
-        clientNameLabel.textContent = 'Nome Completo';
-        
-        const type = e.target.value;
-        
-        // SEGURANÇA: Só tenta pegar o dbState se o window.app já existir
-        let dbState = null;
-        if (window.app && window.app.getDbState) {
-            dbState = window.app.getDbState();
-        }
-        
-        if (type === '5') eventDetails.classList.add('hidden');
-        
-        if (type === '6') {
-            clientNameLabel.textContent = 'Nome do Pai ou Mãe (Responsável)';
-            document.querySelector('label[for="eventDate"]').textContent = 'Data do Evento Principal (Baile)';
-            document.getElementById('formaturaStudentDetails').classList.remove('hidden');
-        } else {
-            document.querySelector('label[for="eventDate"]').textContent = 'Data do Evento';
-            document.getElementById('formaturaStudentDetails').classList.add('hidden');
-        }
-
-        // Carrega pacotes se não for "Geral" (4) ou "Entrada de Dados" (5)
-        if (type !== '4' && type !== '5') {
-            packageSection.classList.remove('hidden');
-            // Chama a função global que atualiza o select (se ela e o dbState existirem)
-            if (window.app && window.app.updatePackageSelect && dbState) {
-                window.app.updatePackageSelect('contractPackage', type, dbState);
+    if (contractTypeSelect) {
+        contractTypeSelect.addEventListener('change', (e) => {
+            const eventDetails = document.getElementById('eventDetails');
+            const packageSection = document.getElementById('dynamicPackageSection'); 
+            const clientNameLabel = document.getElementById('clientNameLabel');
+            
+            if(packageSection) packageSection.classList.add('hidden');
+            if(eventDetails) eventDetails.classList.remove('hidden');
+            if(clientNameLabel) clientNameLabel.textContent = 'Nome Completo';
+            
+            const type = e.target.value;
+            
+            let dbState = null;
+            if (window.app && window.app.getDbState) {
+                dbState = window.app.getDbState();
             }
-        }
-    });
+            
+            if (type === '5' && eventDetails) eventDetails.classList.add('hidden');
+            
+            const studentDetails = document.getElementById('formaturaStudentDetails');
+            if (type === '6') {
+                if(clientNameLabel) clientNameLabel.textContent = 'Nome do Pai ou Mãe (Responsável)';
+                const dateLabel = document.querySelector('label[for="eventDate"]');
+                if(dateLabel) dateLabel.textContent = 'Data do Evento Principal (Baile)';
+                if(studentDetails) studentDetails.classList.remove('hidden');
+            } else {
+                const dateLabel = document.querySelector('label[for="eventDate"]');
+                if(dateLabel) dateLabel.textContent = 'Data do Evento';
+                if(studentDetails) studentDetails.classList.add('hidden');
+            }
+
+            // Carrega pacotes se não for "Geral" (4) ou "Entrada de Dados" (5)
+            if (type !== '4' && type !== '5') {
+                if(packageSection) packageSection.classList.remove('hidden');
+                if (window.app && window.app.updatePackageSelect && dbState) {
+                    window.app.updatePackageSelect('contractPackage', type, dbState);
+                }
+            }
+        });
+
+        // Dispara o evento change para arrumar a tela inicial
+        contractTypeSelect.dispatchEvent(new Event('change'));
+    }
 
     // --- Listener para PREENCHER O VALOR automaticamente ---
     const packageSelect = document.getElementById('contractPackage');
@@ -185,11 +206,9 @@ export function initGeradorListeners() {
         packageSelect.addEventListener('change', (e) => {
             const selectedOption = e.target.options[e.target.selectedIndex];
             if (selectedOption && selectedOption.dataset.valor) {
-                document.getElementById('value').value = selectedOption.dataset.valor;
+                const valInput = document.getElementById('value');
+                if(valInput) valInput.value = selectedOption.dataset.valor;
             }
         });
     }
-
-    // Inicialização (Dispara o evento change para arrumar a tela inicial)
-    contractTypeSelect.dispatchEvent(new Event('change'));
 }
