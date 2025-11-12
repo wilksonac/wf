@@ -236,6 +236,14 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         store.saveTemplate(userId, data, templateId || null).then(() => ui.clearTemplateForm()).catch(e => alert("Falha ao salvar template: " + e.message));
     });
+    // Listener para atualizar pacotes no EDITOR DE TEMPLATES
+    // (Adicione isso logo após o listener do 'form-template')
+    const templateTypeSelect = document.getElementById('template-link-tipo');
+    if (templateTypeSelect) {
+        templateTypeSelect.addEventListener('change', (e) => {
+            ui.updatePackageSelect('template-link-pacote', e.target.value, dbState);
+        });
+    }
 
     // #############################################################
     // AQUI ESTÁ O CÓDIGO DO PACOTE COM LOGS DE DEBUG
@@ -331,3 +339,4 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('payment-date').valueAsDate = new Date();
     document.getElementById('custo-data').valueAsDate = new Date();
 });
+
