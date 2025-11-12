@@ -566,45 +566,12 @@
                                                         <input type="text" id="eventLocal" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Salão de Festas X">
                                                     </div>
                                                 </div>
-                                                 <div id="weddingPackageSection" class="hidden">
-                                                    <label for="weddingPackage" class="block text-sm font-medium text-gray-700 mb-1">Pacote de Casamento</label>
-                                                    <select id="weddingPackage" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                                                        <option value="" disabled selected>Selecione um pacote...</option>
-                                                        <option value="AMOR ETERNO (4x de R$ 1.050,00)">AMOR ETERNO (4x de R$ 1.050,00)</option>
-                                                        <option value="ALIANÇAS DOURADAS (4x de R$ 925,00)">ALIANÇAS DOURADAS (4x de R$ 925,00)</option>
-                                                        <option value="LUA DE MEL (3x de R$ 950,00)">LUA DE MEL (3x de R$ 950,00)</option>
-                                                        <option value="MEMÓRIAS (3x de R$ 800,00)">MEMÓRIAS (3x de R$ 800,00)</option>
-                                                    </select>
-                                                </div>
-                                                <div id="infantilPackageSection" class="hidden">
-                                                    <label for="infantilPackage" class="block text-sm font-medium text-gray-700 mb-1">Pacote Festa Infantil</label>
-                                                    <select id="infantilPackage" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                                                        <option value="" disabled selected>Selecione um pacote...</option>
-                                                        <option value="Diamante (4x de R$ 650,00)">Diamante (4x de R$ 650,00)</option>
-                                                        <option value="Ouro (3x de R$ 600,00)">Ouro (3x de R$ 600,00)</option>
-                                                        <option value="Prata (2x de R$ 600,00)">Prata (2x de R$ 600,00)</option>
-                                                        <option value="Bronze (2x de R$ 550,00)">Bronze (2x de R$ 550,00)</option>
-                                                    </select>
-                                                </div>
-                                                <div id="civilPackageSection" class="hidden">
-                                                    <label for="civilPackage" class="block text-sm font-medium text-gray-700 mb-1">Pacote Casamento Civil</label>
-                                                    <select id="civilPackage" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                                                        <option value="" disabled selected>Selecione um pacote...</option>
-                                                        <option value="Tradicional (2x de R$ 600,00)">Tradicional (2x de R$ 600,00)</option>
-                                                        <option value="Premium (2x de R$ 750,00)">Premium (2x de R$ 750,00)</option>
-                                                        <option value="Super Premium (3x de R$ 800,00)">Super Premium (3x de R$ 800,00)</option>
-                                                    </select>
-                                                </div>
-                                                <div id="formaturaPackageSection" class="hidden">
-                                                    <label for="formaturaPackage" class="block text-sm font-medium text-gray-700 mb-1">Pacote Formatura Infantil</label>
-                                                    <select id="formaturaPackage" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                                                        <option value="" disabled selected>Selecione um pacote...</option>
-                                                        <option value="Dei Bambini (4x de R$ 649,00)">Dei Bambini (4x de R$ 649,00)</option>
-                                                        <option value="Nana Coc (4x de R$ 599,00)">Nana Coc (4x de R$ 599,00)</option>
-                                                        <option value="Lepetit (4x de R$ 499,00)">Lepetit (4x de R$ 499,00)</option>
-                                                        <option value="ABC (4x de R$ 299,00)">ABC (4x de R$ 299,00)</option>
-                                                    </select>
-                                                </div>
+                                                 <div id="dynamicPackageSection" class="hidden">
+												    <label for="contractPackage" class="block text-sm font-medium text-gray-700 mb-1">Pacote Selecionado</label>
+												    <select id="contractPackage" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+												        <option value="">Selecione o Tipo de Contrato primeiro...</option>
+												    </select>
+												</div>
                                                  <div>
                                                     <label for="package" class="block text-sm font-medium text-gray-700 mb-1">Descrição do Serviço / Observações</label>
                                                     <textarea id="package" rows="3" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Descreva o serviço ou adicione itens não inclusos no pacote."></textarea>
