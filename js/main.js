@@ -1,7 +1,7 @@
 // js/main.js
 
 // ######################################################
-// ARQUIVO 7: O CÉREBRO MESTRE (main.js) - VERSÃO FINAL
+// ARQUIVO 7: O CÉREBRO MESTRE (main.js) - VERSÃO COM CSV
 // ######################################################
 
 import { setupAuthListeners } from './auth.js';
@@ -20,7 +20,6 @@ let calendarioData = new Date();
 let selectedEventIdForEntrega = null; 
 
 function onDataChange(newState) {
-    // console.log("Dados recebidos:", newState); // Debug
     dbState = newState; 
     
     ui.updateDashboard(dbState);
@@ -45,7 +44,6 @@ function onDataChange(newState) {
         ui.renderEntregasAtrasadas(dbState);
     }
     
-    // Verifica se a seção financeira está ativa para renderizar
     const financeiroSection = document.getElementById('section-financeiro');
     if (financeiroSection && !financeiroSection.classList.contains('hidden')) {
         ui.renderContasAReceber(dbState);
@@ -116,8 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (pacote) ui.populatePacoteForm(pacote);
         },
         clearPacoteForm: () => ui.clearPacoteForm(),
-
-        // FUNÇÃO DE EDITAR COLUNA
+        
         editColumn: (columnId, currentName) => {
             const newName = prompt("Novo nome para a coluna:", currentName);
             if (newName && newName.trim() !== "" && newName !== currentName) {
@@ -127,6 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         getDbState: () => dbState,
+        
         updatePackageSelect: ui.updatePackageSelect, 
 
         deleteItem: (collectionName, id) => {
@@ -134,14 +132,20 @@ document.addEventListener('DOMContentLoaded', () => {
             let message = `Tem certeza que deseja excluir este item?`;
             
             if (collectionName === 'clientes' || collectionName === 'eventos') {
-                message += `\nNenhum contrato, evento ou pagamento associado será excluído.`;
-            } else if (collectionName === 'contratos') {
+                message = "⚠️ ATENÇÃO! ⚠️\n\nVocê está prestes a apagar este item e TUDO relacionado a ele (Eventos, Contratos, Pagamentos). Deseja continuar?";
+                if (confirm(message)) {
+                    if (collectionName === 'clientes') store.deleteClientAndRelations(userId, id).catch(e => alert(e.message));
+                    else store.deleteEventAndRelations(userId, id).catch(e => alert(e.message));
+                    return;
+                } else return;
+            } 
+            
+            if (collectionName === 'contratos') {
                 message += `\n\nATENÇÃO: Isso NÃO excluirá os pagamentos já feitos.`;
             } else if (collectionName === 'financeiro') {
                 message = `Tem certeza que deseja excluir este PAGAMENTO?`;
             } else if (collectionName === 'colunas') {
-                // AVISO IMPORTANTE PARA COLUNAS
-                message = `⚠️ ATENÇÃO ⚠️\n\nSe você excluir esta coluna, os eventos que estão nela NÃO serão apagados, mas ficarão "invisíveis" no quadro até que você os mova para outra coluna (ou recrie esta coluna).\n\nTem certeza?`;
+                message = `⚠️ ATENÇÃO ⚠️\n\nSe você excluir esta coluna, os eventos que estão nela ficarão invisíveis até serem movidos. Tem certeza?`;
             } else if (collectionName === 'pacotes') {
                 message = `Tem certeza que deseja excluir este PACOTE?\n\nIsso não afetará contratos já gerados.`;
             }
@@ -157,26 +161,23 @@ document.addEventListener('DOMContentLoaded', () => {
         marcarEntregue: (eventId, tipo) => {
             if (!userId) return;
             store.marcarEntregue(userId, eventId, tipo).catch(e => alert(e.message));
-        }
+        },
+
+        // --- NOVA FUNÇÃO DE EXPORTAR CSV ---
         exportarCSV: () => {
             if (!dbState.eventos || dbState.eventos.length === 0) {
                 alert("Não há dados suficientes para exportar.");
                 return;
             }
 
-            // 1. Cabeçalho do CSV
             let csvContent = "Evento;Data do Evento;Cliente;Email;Telefone;Tipo;Local;Pacote/Contrato;Valor Contrato;Total Pago;Restante;Total Custos;Lucro Liquido;Status Previa;Status Midia;Status Album\n";
 
-            // 2. Iterar sobre todos os eventos (que são o centro do dossiê)
             dbState.eventos.forEach(evento => {
-                // Cruzar dados
                 const cliente = dbState.clientes.find(c => c.id === evento.clienteId) || {};
-                const contrato = dbState.contratos.find(c => c.eventoId === evento.id); // Pode ser undefined
+                const contrato = dbState.contratos.find(c => c.eventoId === evento.id); 
                 
-                // Cálculos Financeiros
                 const valorTotal = contrato ? (parseFloat(contrato.valorTotal) || 0) : 0;
                 
-                // Soma pagamentos deste contrato
                 const totalPago = contrato 
                     ? dbState.financeiro
                         .filter(p => p.contratoId === contrato.id)
@@ -185,21 +186,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const restante = valorTotal - totalPago;
 
-                // Soma custos deste evento
                 const totalCustos = dbState.custos
                     .filter(c => c.eventoId === evento.id)
                     .reduce((acc, c) => acc + (parseFloat(c.valor) || 0), 0);
 
-                const lucro = totalPago - totalCustos; // Lucro baseado no que entrou vs o que saiu
+                const lucro = totalPago - totalCustos; 
 
-                // Formatação de Datas e Valores para o Excel (PT-BR)
                 const dataEvento = evento.data ? new Date(evento.data + 'T00:00:00').toLocaleDateString('pt-BR') : '';
                 
-                // Função auxiliar para tratar texto (remove ponto e vírgula que quebra o CSV)
                 const safeText = (text) => text ? text.replace(/;/g, " - ").replace(/(\r\n|\n|\r)/gm, " ") : "";
                 const money = (val) => val.toFixed(2).replace('.', ',');
 
-                // Monta a linha
                 const row = [
                     safeText(evento.nome),
                     dataEvento,
@@ -208,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     safeText(cliente.telefone),
                     safeText(evento.tipo),
                     safeText(evento.local),
-                    contrato ? "Sim" : "Sem Contrato", // Poderia por o nome do pacote se tivermos
+                    contrato ? "Sim" : "Sem Contrato", 
                     money(valorTotal),
                     money(totalPago),
                     money(restante),
@@ -222,8 +219,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 csvContent += row.join(";") + "\n";
             });
 
-            // 3. Criar o arquivo e forçar download
-            // O caractere \uFEFF é o BOM (Byte Order Mark) para o Excel abrir acentos corretamente
             const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
@@ -237,7 +232,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- LISTENERS GERAIS ---
 
-    // Listener: Atualizar Pacotes no Editor de Templates
     const templateTypeSelect = document.getElementById('template-link-tipo');
     if (templateTypeSelect) {
         templateTypeSelect.addEventListener('change', (e) => {
@@ -245,7 +239,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Listener: Salvar Pacote
     const pacoteForm = document.getElementById('form-pacote');
     if (pacoteForm) {
         pacoteForm.addEventListener('submit', (e) => {
@@ -270,7 +263,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Listener: Salvar Template
     const templateForm = document.getElementById('form-template');
     if (templateForm) {
         templateForm.addEventListener('submit', (e) => {
@@ -288,7 +280,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Outros Listeners
     document.getElementById('form-cliente').addEventListener('submit', (e) => {
         e.preventDefault();
         const data = {
@@ -415,5 +406,3 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('payment-date').valueAsDate = new Date();
     document.getElementById('custo-data').valueAsDate = new Date();
 });
-
-
