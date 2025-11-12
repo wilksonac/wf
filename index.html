@@ -678,9 +678,25 @@
 								    <p class="text-xs text-gray-500 mt-1">A lista aparecerá após selecionar o Tipo acima.</p>
 								</div>
                                 <div class="mb-4">
-                                    <label for="template-corpo" class="block text-sm font-medium text-gray-700 mb-1">Corpo do Contrato</label>
-                                    <textarea id="template-corpo" rows="25" class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm" placeholder="Cole aqui o texto do seu contrato..."></textarea>
-                                </div>
+								    <label class="block text-sm font-medium text-gray-700 mb-1">Corpo do Contrato</label>
+								    
+								    <div class="editor-toolbar">
+								        <button type="button" class="editor-btn" onclick="document.execCommand('bold',false,null)" title="Negrito">B</button>
+								        <button type="button" class="editor-btn italic" onclick="document.execCommand('italic',false,null)" title="Itálico">I</button>
+								        <button type="button" class="editor-btn underline" onclick="document.execCommand('underline',false,null)" title="Sublinhado">U</button>
+								        <span class="border-r border-gray-300 mx-1"></span>
+								        <button type="button" class="editor-btn" onclick="document.execCommand('justifyLeft',false,null)" title="Esquerda"><i data-lucide="align-left" class="w-4 h-4"></i></button>
+								        <button type="button" class="editor-btn" onclick="document.execCommand('justifyCenter',false,null)" title="Centralizar"><i data-lucide="align-center" class="w-4 h-4"></i></button>
+								        <button type="button" class="editor-btn" onclick="document.execCommand('justifyFull',false,null)" title="Justificar"><i data-lucide="align-justify" class="w-4 h-4"></i></button>
+								        <span class="border-r border-gray-300 mx-1"></span>
+								        <button type="button" class="editor-btn" onclick="document.execCommand('formatBlock',false,'h1')" title="Título 1">H1</button>
+								        <button type="button" class="editor-btn" onclick="document.execCommand('formatBlock',false,'h2')" title="Título 2">H2</button>
+								        <button type="button" class="editor-btn" onclick="document.execCommand('formatBlock',false,'p')" title="Parágrafo">P</button>
+								    </div>
+								
+								    <div id="template-corpo" class="rich-editor" contenteditable="true"></div>
+								    <p class="text-xs text-gray-500 mt-1">Dica: Você pode colar textos do Word aqui e a formatação será mantida.</p>
+								</div>
                                 
                                 <div class="flex items-center gap-4">
                                     <button type="submit" class="bg-green-500 text-white px-5 py-2 rounded hover:bg-green-600 transition">Salvar Template</button>
