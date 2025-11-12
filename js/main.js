@@ -158,6 +158,81 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!userId) return;
             store.marcarEntregue(userId, eventId, tipo).catch(e => alert(e.message));
         }
+        exportarCSV: () => {
+            if (!dbState.eventos || dbState.eventos.length === 0) {
+                alert("Não há dados suficientes para exportar.");
+                return;
+            }
+
+            // 1. Cabeçalho do CSV
+            let csvContent = "Evento;Data do Evento;Cliente;Email;Telefone;Tipo;Local;Pacote/Contrato;Valor Contrato;Total Pago;Restante;Total Custos;Lucro Liquido;Status Previa;Status Midia;Status Album\n";
+
+            // 2. Iterar sobre todos os eventos (que são o centro do dossiê)
+            dbState.eventos.forEach(evento => {
+                // Cruzar dados
+                const cliente = dbState.clientes.find(c => c.id === evento.clienteId) || {};
+                const contrato = dbState.contratos.find(c => c.eventoId === evento.id); // Pode ser undefined
+                
+                // Cálculos Financeiros
+                const valorTotal = contrato ? (parseFloat(contrato.valorTotal) || 0) : 0;
+                
+                // Soma pagamentos deste contrato
+                const totalPago = contrato 
+                    ? dbState.financeiro
+                        .filter(p => p.contratoId === contrato.id)
+                        .reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
+                    : 0;
+                
+                const restante = valorTotal - totalPago;
+
+                // Soma custos deste evento
+                const totalCustos = dbState.custos
+                    .filter(c => c.eventoId === evento.id)
+                    .reduce((acc, c) => acc + (parseFloat(c.valor) || 0), 0);
+
+                const lucro = totalPago - totalCustos; // Lucro baseado no que entrou vs o que saiu
+
+                // Formatação de Datas e Valores para o Excel (PT-BR)
+                const dataEvento = evento.data ? new Date(evento.data + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+                
+                // Função auxiliar para tratar texto (remove ponto e vírgula que quebra o CSV)
+                const safeText = (text) => text ? text.replace(/;/g, " - ").replace(/(\r\n|\n|\r)/gm, " ") : "";
+                const money = (val) => val.toFixed(2).replace('.', ',');
+
+                // Monta a linha
+                const row = [
+                    safeText(evento.nome),
+                    dataEvento,
+                    safeText(cliente.nome),
+                    safeText(cliente.email),
+                    safeText(cliente.telefone),
+                    safeText(evento.tipo),
+                    safeText(evento.local),
+                    contrato ? "Sim" : "Sem Contrato", // Poderia por o nome do pacote se tivermos
+                    money(valorTotal),
+                    money(totalPago),
+                    money(restante),
+                    money(totalCustos),
+                    money(lucro),
+                    safeText(evento.entrega_previa_status),
+                    safeText(evento.entrega_midia_status),
+                    safeText(evento.entrega_album_status)
+                ];
+
+                csvContent += row.join(";") + "\n";
+            });
+
+            // 3. Criar o arquivo e forçar download
+            // O caractere \uFEFF é o BOM (Byte Order Mark) para o Excel abrir acentos corretamente
+            const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `Relatorio_Geral_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
     };
 
     // --- LISTENERS GERAIS ---
@@ -340,4 +415,5 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('payment-date').valueAsDate = new Date();
     document.getElementById('custo-data').valueAsDate = new Date();
 });
+
 
