@@ -1284,3 +1284,29 @@ export function clearPacoteForm() {
     document.getElementById('form-pacote').reset();
     document.getElementById('pacote-id').value = ''; 
 }
+/**
+ * Preenche um select com os pacotes filtrados por categoria.
+ */
+export function updatePackageSelect(selectElementId, categoryId, dbState) {
+    const select = document.getElementById(selectElementId);
+    if (!select) return;
+
+    select.innerHTML = '<option value="">Selecione um Pacote...</option>';
+
+    if (!categoryId || !dbState.pacotes) return;
+
+    // Filtra os pacotes pela categoria (Ex: "1" para Infantil)
+    const pacotesFiltrados = dbState.pacotes.filter(p => p.package_category_id === categoryId);
+
+    pacotesFiltrados.forEach(pacote => {
+        const option = document.createElement('option');
+        // Salvamos o NOME COMPLETO como valor, pois é isso que o template usa para o vínculo
+        option.value = pacote.package_name; 
+        // Mostra o Nome e o Valor no texto
+        const valor = (pacote.package_value || 0).toFixed(2).replace('.', ',');
+        option.textContent = `${pacote.package_name} (R$ ${valor})`;
+        // Salvamos o valor monetário num atributo de dados para usar depois
+        option.dataset.valor = pacote.package_value;
+        select.appendChild(option);
+    });
+}
