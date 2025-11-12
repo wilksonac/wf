@@ -1,5 +1,9 @@
 // js/geradorContrato.js
 
+// ######################################################
+// ARQUIVO 3: LÓGICA DO GERADOR DE CONTRATO (SEM TEXTO RÁPIDO)
+// ######################################################
+
 // Pega os dados do formulário HTML
 function getFormData() {
     const data = {};
@@ -16,7 +20,7 @@ function getFormData() {
         }
     });
 
-    // LÓGICA NOVA: Pega o pacote do SELECT ÚNICO
+    // Pega o pacote do SELECT ÚNICO
     const packageSelect = document.getElementById('contractPackage');
     if (packageSelect && packageSelect.value) {
         // Mapeia para as chaves antigas para manter a compatibilidade
@@ -31,16 +35,11 @@ function getFormData() {
     return data;
 }
 
-// (Função auxiliar parseByLine omitida por brevidade, mas necessária se usar o QuickText)
-function parseByLine(lines, keys) { /* ... código igual ao anterior ... */ }
-function parseQuickTextData() { /* ... código igual ao anterior ... */ }
-
 // Gera o texto final substituindo os placeholders
 function generateContractText(formData, dbState) {
     const contractType = formData.contractType;
     let selectedPackage = "";
 
-    // Define qual pacote foi selecionado com base no tipo
     switch (contractType) {
         case '1': selectedPackage = formData.infantilPackage; break;
         case '2': selectedPackage = formData.weddingPackage; break;
@@ -50,7 +49,6 @@ function generateContractText(formData, dbState) {
     }
     
     // Busca o template no banco de dados (dbState.templates)
-    // Procura um template que tenha o mesmo TIPO e o mesmo NOME DE PACOTE
     const template = dbState.templates.find(t => 
         t.link_tipo === contractType && 
         t.link_pacote === selectedPackage
@@ -110,38 +108,22 @@ function generateContractText(formData, dbState) {
 }
 
 export function initGeradorListeners() {
-    const tabForm = document.getElementById('tab-form');
-    const tabText = document.getElementById('tab-text');
-    const contentForm = document.getElementById('content-form');
-    const contentText = document.getElementById('content-text');
     const contractForm = document.getElementById('contractForm');
     const generateButton = document.getElementById('generateButton');
     const outputSection = document.getElementById('outputSection');
     const contractOutput = document.getElementById('contractOutput');
-    const quickText = document.getElementById('quickText');
 
-    let activeTab = 'form';
-
-    // Listeners de abas
-    tabForm.addEventListener('click', () => {
-        activeTab = 'form';
-        tabForm.classList.add('active');
-        tabText.classList.remove('active');
-        contentForm.classList.remove('hidden');
-        contentText.classList.add('hidden');
-    });
-
-    tabText.addEventListener('click', () => {
-        activeTab = 'text';
-        tabText.classList.add('active');
-        tabForm.classList.remove('active');
-        contentText.classList.remove('hidden');
-        contentForm.classList.add('hidden');
-    });
-    
+    // --- Listener do Botão Gerar ---
     generateButton.addEventListener('click', () => {
-        // (Lógica de validação...)
+        if (!contractForm.checkValidity()) {
+            contractForm.reportValidity();
+            outputSection.classList.remove('hidden');
+            contractOutput.innerHTML = `<p style="color: red; text-align:center">Preencha os campos obrigatórios.</p>`;
+            return;
+        }
+        
         const formData = getFormData(); 
+        // Usa o helper do main.js para pegar o estado atual
         const contractHTML = generateContractText(formData, window.app.getDbState());
         
         contractOutput.innerHTML = contractHTML;
@@ -157,7 +139,9 @@ export function initGeradorListeners() {
     document.getElementById('printButton').addEventListener('click', () => window.print());
 
     // --- LISTENER DINÂMICO DO TIPO DE CONTRATO ---
-    document.getElementById('contractType').addEventListener('change', (e) => {
+    const contractTypeSelect = document.getElementById('contractType');
+    
+    contractTypeSelect.addEventListener('change', (e) => {
         const eventDetails = document.getElementById('eventDetails');
         const packageSection = document.getElementById('dynamicPackageSection'); 
         const clientNameLabel = document.getElementById('clientNameLabel');
@@ -167,39 +151,45 @@ export function initGeradorListeners() {
         clientNameLabel.textContent = 'Nome Completo';
         
         const type = e.target.value;
-        const dbState = window.app.getDbState();
+        
+        // SEGURANÇA: Só tenta pegar o dbState se o window.app já existir
+        let dbState = null;
+        if (window.app && window.app.getDbState) {
+            dbState = window.app.getDbState();
+        }
         
         if (type === '5') eventDetails.classList.add('hidden');
         
         if (type === '6') {
             clientNameLabel.textContent = 'Nome do Pai ou Mãe (Responsável)';
+            document.querySelector('label[for="eventDate"]').textContent = 'Data do Evento Principal (Baile)';
             document.getElementById('formaturaStudentDetails').classList.remove('hidden');
         } else {
+            document.querySelector('label[for="eventDate"]').textContent = 'Data do Evento';
             document.getElementById('formaturaStudentDetails').classList.add('hidden');
         }
 
         // Carrega pacotes se não for "Geral" (4) ou "Entrada de Dados" (5)
         if (type !== '4' && type !== '5') {
             packageSection.classList.remove('hidden');
-            // AQUI ESTÁ A MÁGICA: Chama a função global que preenche o select
-            if (window.app.updatePackageSelect) {
+            // Chama a função global que atualiza o select (se ela e o dbState existirem)
+            if (window.app && window.app.updatePackageSelect && dbState) {
                 window.app.updatePackageSelect('contractPackage', type, dbState);
             }
         }
     });
 
-    // --- Listener para PREENCHER O VALOR automaticamente ao selecionar o pacote ---
+    // --- Listener para PREENCHER O VALOR automaticamente ---
     const packageSelect = document.getElementById('contractPackage');
     if(packageSelect) {
         packageSelect.addEventListener('change', (e) => {
             const selectedOption = e.target.options[e.target.selectedIndex];
-            // Pega o valor que salvamos no dataset e coloca no input de valor
             if (selectedOption && selectedOption.dataset.valor) {
                 document.getElementById('value').value = selectedOption.dataset.valor;
             }
         });
     }
 
-    // Inicialização
-    document.getElementById('contractType').dispatchEvent(new Event('change'));
+    // Inicialização (Dispara o evento change para arrumar a tela inicial)
+    contractTypeSelect.dispatchEvent(new Event('change'));
 }
