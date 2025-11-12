@@ -1191,10 +1191,24 @@ export function populateTemplateForm(template) {
     document.getElementById('template-id').value = template.id;
     document.getElementById('template-titulo').value = template.titulo;
     document.getElementById('template-corpo').value = template.corpo;
-    document.getElementById('template-link-tipo').value = template.link_tipo || ''; // <-- ADICIONADO
-    document.getElementById('template-link-pacote').value = template.link_pacote || ''; // <-- ADICIONADO
 
-    // Foca no topo da página
+    // 1. Seta o Tipo
+    const typeSelect = document.getElementById('template-link-tipo');
+    typeSelect.value = template.link_tipo || '';
+
+    // 2. Dispara o evento 'change' manualmente para carregar os pacotes desse tipo
+    // Precisamos passar o dbState, mas aqui não temos acesso direto a ele facilmente.
+    // Vamos usar o window.app.getDbState() que criamos antes.
+    if (window.app && window.app.getDbState) {
+        const dbState = window.app.getDbState();
+        // Chama a função que acabamos de criar acima (updatePackageSelect)
+        // Nota: Precisamos importar 'updatePackageSelect' ou chamar ela direto se estiver no mesmo arquivo
+        updatePackageSelect('template-link-pacote', template.link_tipo, dbState);
+    }
+
+    // 3. Seta o Pacote (agora que o select foi preenchido)
+    document.getElementById('template-link-pacote').value = template.link_pacote || '';
+
     document.getElementById('section-templates').scrollIntoView({ behavior: 'smooth' });
 }
 /**
