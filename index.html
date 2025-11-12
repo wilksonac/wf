@@ -519,143 +519,131 @@
                     </div>
                 </div>
 
-                <div id="section-gerador" class="content-section hidden">
-                    <h1 class="text-3xl font-bold text-gray-800 mb-6">Gerador de Contratos</h1>
-                    
-                    <main class="bg-white p-6 sm:p-8 rounded-xl shadow-md">
-                        <div class="mb-6 border-b border-gray-200">
-                            <nav class="flex -mb-px space-x-4" aria-label="Tabs">
-                                <button id="tab-form" class="tab-button active whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm">Formulário Detalhado</button>
-                                <button id="tab-text" class="tab-button whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">Entrada Rápida por Texto</button>
-                            </nav>
-                        </div>
-
-                        <form id="contractForm">
-                            <div id="content-form">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                                    <div class="space-y-6">
-                                        <section>
-                                            <h2 class="text-xl font-semibold mb-4 border-b pb-2 text-blue-600">Detalhes do Contrato</h2>
-                                            <div class="space-y-4">
-                                                <div>
-                                                    <label for="contractType" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Contrato</label>
-                                                    <select id="contractType" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
-                                                        <option value="" disabled selected>Selecione o tipo...</option>
-                                                        <option value="1">Festa Infantil</option>
-                                                        <option value="6">Formatura Infantil</option>
-                                                        <option value="2">Casamento</option>
-                                                        <option value="3">Casamento Civil</option>
-                                                        <option value="4">Eventos em Geral</option>
-                                                        <option value="5">Entrada de Dados</option>
-                                                    </select>
-                                                </div>
-                                                <div id="eventDetails" class="space-y-4">
-                                                    <div>
-                                                        <label for="eventDate" class="block text-sm font-medium text-gray-700 mb-1">Data do Evento</label>
-                                                        <input type="date" id="eventDate" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                                                    </div>
-                                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                        <div>
-                                                            <label for="eventTime" class="block text-sm font-medium text-gray-700 mb-1">Hora de Início</label>
-                                                            <input type="time" id="eventTime" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                                                        </div>
-                                                        <div>
-                                                            <label for="eventDuration" class="block text-sm font-medium text-gray-700 mb-1">Duração (horas)</label>
-                                                            <input type="number" id="eventDuration" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Ex: 4">
-                                                        </div>
-                                                    </div>
-                                                    <div>
-                                                        <label for="eventLocal" class="block text-sm font-medium text-gray-700 mb-1">Local do Evento</label>
-                                                        <input type="text" id="eventLocal" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Salão de Festas X">
-                                                    </div>
-                                                </div>
-                                                 <div id="dynamicPackageSection" class="hidden">
-												    <label for="contractPackage" class="block text-sm font-medium text-gray-700 mb-1">Pacote Selecionado</label>
-												    <select id="contractPackage" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-												        <option value="">Selecione o Tipo de Contrato primeiro...</option>
-												    </select>
-												</div>
-                                                 <div>
-                                                    <label for="package" class="block text-sm font-medium text-gray-700 mb-1">Descrição do Serviço / Observações</label>
-                                                    <textarea id="package" rows="3" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Descreva o serviço ou adicione itens não inclusos no pacote."></textarea>
-                                                </div>
-                                            </div>
-                                        </section>
-
-                                        <section>
-                                            <h2 class="text-xl font-semibold mt-6 mb-4 border-b pb-2 text-blue-600">Detalhes Financeiros</h2>
-                                            <div class="space-y-4">
-                                               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                    <div>
-                                                        <label for="value" class="block text-sm font-medium text-gray-700 mb-1">Valor do Contrato (R$)</label>
-                                                        <input type="number" id="value" step="0.01" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="2596.00" required>
-                                                    </div>
-                                                    <div>
-                                                        <label for="paymentMethod" class="block text-sm font-medium text-gray-700 mb-1">Forma de Pagamento</label>
-                                                        <input type="text" id="paymentMethod" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Ex: 4x no cartão..." required>
-                                                    </div>
-                                               </div>
-                                                 <div>
-                                                    <label for="rules" class="block text-sm font-medium text-gray-700 mb-1">Regras e Cláusulas Adicionais</label>
-                                                    <textarea id="rules" rows="3" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Ex: Prazo de entrega do material: 60 dias."></textarea>
-                                                </div>
-                                            </div>
-                                        </section>
-                                    </div>
-
-                                    <section>
-                                         <h2 class="text-xl font-semibold mb-4 border-b pb-2 text-green-600">Dados do Contratante</h2>
-                                        <div class="space-y-4">
-                                            <div>
-                                                <label id="clientNameLabel" for="clientName" class="block text-sm font-medium text-gray-700 mb-1">Nome Completo</label>
-                                                <input type="text" id="clientName" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="Nome do Cliente" required>
-                                            </div>
-                                            <div id="formaturaStudentDetails" class="hidden space-y-4">
-                                                <input type="text" id="studentName" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="Nome do Formando(a)">
-                                                <input type="text" id="studentClass" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="Turma">
-                                            </div>
-                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                <input type="text" id="clientCPF" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="CPF" required>
-                                                <input type="text" id="clientRG" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="RG">
-                                            </div>
-                                            <input type="text" id="clientAddress" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="Endereço Completo com CEP" required>
-                                            <input type="email" id="clientEmail" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="E-mail" required>
-                                            <input type="tel" id="clientPhone" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="Telefone com DDD" required>
-                                            <div class="pt-2">
-                                                <label class="flex items-center">
-                                                    <input type="checkbox" id="imageRights" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                                    <span class="ml-2 text-sm text-gray-700">Autoriza o uso de imagem para portfólio?</span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </section>
-                                </div>
-                            </div>
-
-                            <div id="content-text" class="hidden">
-                                <label for="quickText" class="block text-sm font-medium text-gray-700 mb-2">Entrada de Dados Rápida</label>
-                                <p class="text-xs text-gray-500 mb-3">Complete os dados abaixo. O sistema irá distribuir as informações automaticamente no contrato selecionado.</p>
-                                <textarea id="quickText" rows="15" class="w-full form-input p-3 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
-                            </div>
-
-                            <div class="mt-8 text-center">
-                                <button type="button" id="generateButton" class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-10 rounded-lg shadow-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300">
-                                    Gerar Contrato
-                                </button>
-                            </div>
-                        </form>
-                    </main>
-                    
-                    <section id="outputSection" class="mt-10 bg-white p-6 sm:p-8 rounded-xl shadow-md hidden">
-                        <h2 class="text-2xl font-bold text-center mb-6">Contrato Gerado</h2>
-                        <div id="contractOutput" class="bg-white rounded-lg"></div>
-                        <div class="mt-6 flex flex-col sm:flex-row justify-center items-center gap-4 no-print">
-                            <button id="copyButton" class="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg">Copiar Texto</button>
-                            <button id="printButton" class="w-full sm:w-auto bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-6 rounded-lg">Imprimir / Salvar PDF</button>
-                        </div>
-                        <div id="copySuccess" class="mt-4 text-center text-green-600 font-medium hidden">Contrato copiado!</div>
-                    </section>
-                </div>
+               <div id="section-gerador" class="content-section hidden">
+				    <h1 class="text-3xl font-bold text-gray-800 mb-6">Gerador de Contratos</h1>
+				    
+				    <main class="bg-white p-6 sm:p-8 rounded-xl shadow-md">
+				        <form id="contractForm">
+				            <div id="content-form">
+				                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+				                    <div class="space-y-6">
+				                        <section>
+				                            <h2 class="text-xl font-semibold mb-4 border-b pb-2 text-blue-600">Detalhes do Contrato</h2>
+				                            <div class="space-y-4">
+				                                <div>
+				                                    <label for="contractType" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Contrato</label>
+				                                    <select id="contractType" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
+				                                        <option value="" disabled selected>Selecione o tipo...</option>
+				                                        <option value="1">Festa Infantil</option>
+				                                        <option value="6">Formatura Infantil</option>
+				                                        <option value="2">Casamento</option>
+				                                        <option value="3">Casamento Civil</option>
+				                                        <option value="4">Eventos em Geral</option>
+				                                        <option value="5">Entrada de Dados</option>
+				                                        <option value="7">Ensaio</option>
+				                                    </select>
+				                                </div>
+				                                <div id="eventDetails" class="space-y-4">
+				                                    <div>
+				                                        <label for="eventDate" class="block text-sm font-medium text-gray-700 mb-1">Data do Evento</label>
+				                                        <input type="date" id="eventDate" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+				                                    </div>
+				                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+				                                        <div>
+				                                            <label for="eventTime" class="block text-sm font-medium text-gray-700 mb-1">Hora de Início</label>
+				                                            <input type="time" id="eventTime" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+				                                        </div>
+				                                        <div>
+				                                            <label for="eventDuration" class="block text-sm font-medium text-gray-700 mb-1">Duração (horas)</label>
+				                                            <input type="number" id="eventDuration" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Ex: 4">
+				                                        </div>
+				                                    </div>
+				                                    <div>
+				                                        <label for="eventLocal" class="block text-sm font-medium text-gray-700 mb-1">Local do Evento</label>
+				                                        <input type="text" id="eventLocal" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Salão de Festas X">
+				                                    </div>
+				                                </div>
+				                                    <div id="dynamicPackageSection" class="hidden">
+				                                    <label for="contractPackage" class="block text-sm font-medium text-gray-700 mb-1">Pacote Selecionado</label>
+				                                    <select id="contractPackage" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+				                                        <option value="">Selecione o Tipo de Contrato primeiro...</option>
+				                                    </select>
+				                                </div>
+				                                    <div>
+				                                    <label for="package" class="block text-sm font-medium text-gray-700 mb-1">Descrição do Serviço / Observações</label>
+				                                    <textarea id="package" rows="3" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Descreva o serviço ou adicione itens não inclusos no pacote."></textarea>
+				                                </div>
+				                            </div>
+				                        </section>
+				
+				                        <section>
+				                            <h2 class="text-xl font-semibold mt-6 mb-4 border-b pb-2 text-blue-600">Detalhes Financeiros</h2>
+				                            <div class="space-y-4">
+				                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+				                                    <div>
+				                                        <label for="value" class="block text-sm font-medium text-gray-700 mb-1">Valor do Contrato (R$)</label>
+				                                        <input type="number" id="value" step="0.01" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="2596.00" required>
+				                                    </div>
+				                                    <div>
+				                                        <label for="paymentMethod" class="block text-sm font-medium text-gray-700 mb-1">Forma de Pagamento</label>
+				                                        <input type="text" id="paymentMethod" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Ex: 4x no cartão..." required>
+				                                    </div>
+				                                </div>
+				                                    <div>
+				                                    <label for="rules" class="block text-sm font-medium text-gray-700 mb-1">Regras e Cláusulas Adicionais</label>
+				                                    <textarea id="rules" rows="3" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Ex: Prazo de entrega do material: 60 dias."></textarea>
+				                                </div>
+				                            </div>
+				                        </section>
+				                    </div>
+				
+				                    <section>
+				                            <h2 class="text-xl font-semibold mb-4 border-b pb-2 text-green-600">Dados do Contratante</h2>
+				                        <div class="space-y-4">
+				                            <div>
+				                                <label id="clientNameLabel" for="clientName" class="block text-sm font-medium text-gray-700 mb-1">Nome Completo</label>
+				                                <input type="text" id="clientName" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="Nome do Cliente" required>
+				                            </div>
+				                            <div id="formaturaStudentDetails" class="hidden space-y-4">
+				                                <input type="text" id="studentName" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="Nome do Formando(a)">
+				                                <input type="text" id="studentClass" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="Turma">
+				                            </div>
+				                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+				                                <input type="text" id="clientCPF" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="CPF" required>
+				                                <input type="text" id="clientRG" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="RG">
+				                            </div>
+				                            <input type="text" id="clientAddress" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="Endereço Completo com CEP" required>
+				                            <input type="email" id="clientEmail" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="E-mail" required>
+				                            <input type="tel" id="clientPhone" class="w-full form-input p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="Telefone com DDD" required>
+				                            <div class="pt-2">
+				                                <label class="flex items-center">
+				                                    <input type="checkbox" id="imageRights" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+				                                    <span class="ml-2 text-sm text-gray-700">Autoriza o uso de imagem para portfólio?</span>
+				                                </label>
+				                            </div>
+				                        </div>
+				                    </section>
+				                </div>
+				            </div>
+				
+				            <div class="mt-8 text-center">
+				                <button type="button" id="generateButton" class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-10 rounded-lg shadow-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300">
+				                    Gerar Contrato
+				                </button>
+				            </div>
+				        </form>
+				    </main>
+				    
+				    <section id="outputSection" class="mt-10 bg-white p-6 sm:p-8 rounded-xl shadow-md hidden">
+				        <h2 class="text-2xl font-bold text-center mb-6">Contrato Gerado</h2>
+				        <div id="contractOutput" class="bg-white rounded-lg"></div>
+				        <div class="mt-6 flex flex-col sm:flex-row justify-center items-center gap-4 no-print">
+				            <button id="copyButton" class="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg">Copiar Texto</button>
+				            <button id="printButton" class="w-full sm:w-auto bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-6 rounded-lg">Imprimir / Salvar PDF</button>
+				        </div>
+				        <div id="copySuccess" class="mt-4 text-center text-green-600 font-medium hidden">Contrato copiado!</div>
+				    </section>
+				</div>
                 
                 <div id="section-templates" class="content-section hidden">
                     <h1 class="text-3xl font-bold text-gray-800 mb-6">Editor de Templates de Contrato</h1>
