@@ -1,7 +1,7 @@
 // js/main.js
 
 // ######################################################
-// ARQUIVO 7: O CÉREBRO MESTRE (main.js) - VERSÃO COM CSV
+// ARQUIVO 7: O CÉREBRO MESTRE (main.js) - ORDEM CORRIGIDA
 // ######################################################
 
 import { setupAuthListeners } from './auth.js';
@@ -80,9 +80,10 @@ function onLogout() {
 document.addEventListener('DOMContentLoaded', () => {
     
     setupAuthListeners(onLogin, onLogout);
-    initGeradorListeners();
+    // initGeradorListeners(); <--- REMOVIDO DAQUI (Estava muito cedo)
     initDragAndDrop(); 
     
+    // Cria o objeto global window.app PRIMEIRO
     window.app = {
         showSection: (sectionId) => ui.showSection(sectionId, dbState, calendarioData),
         openDossieModal: (contratoId) => ui.openDossieModal(contratoId, dbState),
@@ -163,7 +164,6 @@ document.addEventListener('DOMContentLoaded', () => {
             store.marcarEntregue(userId, eventId, tipo).catch(e => alert(e.message));
         },
 
-        // --- NOVA FUNÇÃO DE EXPORTAR CSV ---
         exportarCSV: () => {
             if (!dbState.eventos || dbState.eventos.length === 0) {
                 alert("Não há dados suficientes para exportar.");
@@ -229,6 +229,9 @@ document.addEventListener('DOMContentLoaded', () => {
             document.body.removeChild(link);
         }
     };
+
+    // --- INICIALIZA O GERADOR AGORA (Depois que window.app existe) ---
+    initGeradorListeners(); 
 
     // --- LISTENERS GERAIS ---
 
