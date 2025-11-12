@@ -1,21 +1,15 @@
 // js/ui.js
 
 // ######################################################
-// ARQUIVO 4: RENDERIZADOR DA INTERFACE (UI)
+// ARQUIVO 4: RENDERIZADOR DA INTERFACE (UI) - VERSÃO V01
 // ######################################################
-// Este arquivo controla TUDO que o usuário vê. 
-// Ele lê o 'dbState' e desenha o HTML.
+
+// Variável global para o gráfico
+let myFluxoChart = null; 
 
 // --- 1. RENDERIZAÇÃO DO DASHBOARD ---
 
-// js/ui.js
-
-// 
-// SUBSTITUA A FUNÇÃO 'updateDashboard' INTEIRA POR ESTA
-//
-let myFluxoChart = null;
 export function updateDashboard(dbState) {
-    // --- 1. Cards de Stats (Lógica existente) ---
     const totalPago = dbState.financeiro.reduce((acc, item) => acc + (parseFloat(item.valor) || 0), 0);
     
     let totalContratado = 0;
@@ -40,12 +34,12 @@ export function updateDashboard(dbState) {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
-    // Entregas Críticas (Lógica existente)
+    // Entregas Críticas
     let entregasCriticasCount = 0;
     dbState.eventos.forEach(evento => {
         const tipos = ['previa', 'midia', 'album'];
         tipos.forEach(tipo => {
-            const info = getEntregaInfo(evento, tipo); // Esta função já existe no ui.js
+            const info = getEntregaInfo(evento, tipo); 
             if (info.status === 'atrasado' || info.status === 'hoje') {
                 entregasCriticasCount++;
             }
@@ -53,7 +47,7 @@ export function updateDashboard(dbState) {
     });
     document.getElementById('db-entregas-criticas').innerText = entregasCriticasCount;
     
-    // Contratos Fechados (Mês) (Lógica existente)
+    // Contratos Fechados (Mês)
     let valorContratosMes = 0;
     const mesAtual = hoje.getMonth();
     const anoAtual = hoje.getFullYear();
@@ -68,7 +62,7 @@ export function updateDashboard(dbState) {
     });
     document.getElementById('db-contratos-mes').innerText = `R$ ${valorContratosMes.toFixed(2).replace('.', ',')}`;
 
-    // Eventos (Próximos 30 dias) (Lógica existente)
+    // Eventos (Próximos 30 dias)
     let eventos30DiasCount = 0;
     const dataLimite = new Date();
     dataLimite.setDate(hoje.getDate() + 30);
@@ -83,78 +77,73 @@ export function updateDashboard(dbState) {
     });
     document.getElementById('db-eventos-30d').innerText = eventos30DiasCount;
 
-
-    // --- 2. NOVAS LISTAS DE EVENTOS (Início da Lógica Nova) ---
+    // --- Novas Listas do Dashboard ---
     
-    // --- Próximos 5 Eventos ---
+    // Próximos 5 Eventos
     const proximosEventosContainer = document.getElementById('dashboard-proximos-eventos');
-    
-    // Filtra eventos a partir de hoje e pega os 5 primeiros
-    // (dbState.eventos já vem ordenado por data do store.js)
-    const eventosFuturos = dbState.eventos
-        .filter(evento => evento.data && new Date(evento.data + 'T00:00:00') >= hoje)
-        .slice(0, 5); 
+    if (proximosEventosContainer) {
+        const eventosFuturos = dbState.eventos
+            .filter(evento => evento.data && new Date(evento.data + 'T00:00:00') >= hoje)
+            .slice(0, 5); 
 
-    if (eventosFuturos.length === 0) {
-        proximosEventosContainer.innerHTML = '<p class="text-gray-500">Nenhum evento futuro agendado.</p>';
-    } else {
-        proximosEventosContainer.innerHTML = eventosFuturos.map(evento => {
-            const dataFormatada = new Date(evento.data + 'T00:00:00').toLocaleDateString('pt-BR');
-            const cliente = dbState.clientes.find(c => c.id === evento.clienteId);
-            return `
-                <div class="border-b border-gray-100 pb-2">
-                    <p class="font-semibold text-gray-800">${evento.nome}</p>
-                    <p class="text-sm text-gray-600">${cliente ? cliente.nome : 'Cliente'} - <strong>${dataFormatada}</strong></p>
-                </div>
-            `;
-        }).join('');
-    }
-
-    // --- Últimos 5 Eventos (Entregas) ---
-    const ultimosEventosContainer = document.getElementById('dashboard-ultimos-eventos');
-    
-    // Filtra eventos que já passaram, pega os 5 mais recentes e inverte
-    const eventosPassados = dbState.eventos
-        .filter(evento => evento.data && new Date(evento.data + 'T00:00:00') < hoje)
-        .slice(-5) // Pega os 5 últimos da lista (mais recentes)
-        .reverse(); // Inverte para mostrar o mais recente no topo
-
-    if (eventosPassados.length === 0) {
-        ultimosEventosContainer.innerHTML = '<p class="text-gray-500">Nenhum evento passado encontrado.</p>';
-    } else {
-        ultimosEventosContainer.innerHTML = eventosPassados.map(evento => {
-            // Reusa a lógica de cálculo de entrega
-            const infoMidia = getEntregaInfo(evento, 'midia');
-            const infoAlbum = getEntregaInfo(evento, 'album');
-
-            // Função auxiliar para cor do status
-            const getStatusColor = (info) => {
-                if (info.status === 'entregue') return 'text-green-600';
-                if (info.status === 'atrasado') return 'text-red-600';
-                if (info.status === 'hoje') return 'text-yellow-600';
-                return 'text-blue-600'; // pendente
-            };
-            
-            const midiaColor = getStatusColor(infoMidia);
-            const albumColor = getStatusColor(infoAlbum);
-            const dataFormatada = new Date(evento.data + 'T00:00:00').toLocaleDateString('pt-BR');
-
-            return `
-                <div class="border-b border-gray-100 pb-3">
-                    <p class_="font-semibold text-gray-800">${evento.nome} <span class="text-sm text-gray-500">(${dataFormatada})</span></p>
-                    <div class="text-sm space-y-1 mt-1 pl-2">
-                        <p><strong>Mídia:</strong> <span class="font-medium ${midiaColor}">${infoMidia.text}</span></p>
-                        <p><strong>Álbum:</strong> <span class="font-medium ${albumColor}">${infoAlbum.text}</span></p>
+        if (eventosFuturos.length === 0) {
+            proximosEventosContainer.innerHTML = '<p class="text-gray-500">Nenhum evento futuro agendado.</p>';
+        } else {
+            proximosEventosContainer.innerHTML = eventosFuturos.map(evento => {
+                const dataFormatada = new Date(evento.data + 'T00:00:00').toLocaleDateString('pt-BR');
+                const cliente = dbState.clientes.find(c => c.id === evento.clienteId);
+                return `
+                    <div class="border-b border-gray-100 pb-2">
+                        <p class="font-semibold text-gray-800">${evento.nome}</p>
+                        <p class="text-sm text-gray-600">${cliente ? cliente.nome : 'Cliente'} - <strong>${dataFormatada}</strong></p>
                     </div>
-                </div>
-            `;
-        }).join('');
+                `;
+            }).join('');
+        }
     }
-    
-    // (Fim da Lógica Nova)
+
+    // Últimos 5 Eventos (Entregas)
+    const ultimosEventosContainer = document.getElementById('dashboard-ultimos-eventos');
+    if (ultimosEventosContainer) {
+        const eventosPassados = dbState.eventos
+            .filter(evento => evento.data && new Date(evento.data + 'T00:00:00') < hoje)
+            .slice(-5)
+            .reverse();
+
+        if (eventosPassados.length === 0) {
+            ultimosEventosContainer.innerHTML = '<p class="text-gray-500">Nenhum evento passado encontrado.</p>';
+        } else {
+            ultimosEventosContainer.innerHTML = eventosPassados.map(evento => {
+                const infoMidia = getEntregaInfo(evento, 'midia');
+                const infoAlbum = getEntregaInfo(evento, 'album');
+
+                const getStatusColor = (info) => {
+                    if (info.status === 'entregue') return 'text-green-600';
+                    if (info.status === 'atrasado') return 'text-red-600';
+                    if (info.status === 'hoje') return 'text-yellow-600';
+                    return 'text-blue-600'; 
+                };
+                
+                const midiaColor = getStatusColor(infoMidia);
+                const albumColor = getStatusColor(infoAlbum);
+                const dataFormatada = new Date(evento.data + 'T00:00:00').toLocaleDateString('pt-BR');
+
+                return `
+                    <div class="border-b border-gray-100 pb-3">
+                        <p class="font-semibold text-gray-800">${evento.nome} <span class="text-sm text-gray-500">(${dataFormatada})</span></p>
+                        <div class="text-sm space-y-1 mt-1 pl-2">
+                            <p><strong>Mídia:</strong> <span class="font-medium ${midiaColor}">${infoMidia.text}</span></p>
+                            <p><strong>Álbum:</strong> <span class="font-medium ${albumColor}">${infoAlbum.text}</span></p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+    }
 }
 
-// --- 2. RENDERIZAÇÃO DAS SEÇÕES PRINCIPAIS (Kanban, Tabelas) ---
+
+// --- 2. RENDERIZAÇÃO DAS SEÇÕES PRINCIPAIS ---
 
 export function renderKanban(dbState) {
     const board = document.getElementById('kanban-board');
@@ -162,10 +151,10 @@ export function renderKanban(dbState) {
 
     const colunasOrdenadas = [...dbState.colunas].sort((a, b) => a.ordem - b.ordem);
     
-    board.innerHTML = ''; // Limpa o quadro
+    board.innerHTML = ''; 
 
     if (colunasOrdenadas.length === 0) {
-        board.innerHTML = `<p class="text-gray-500 p-4">Nenhuma coluna Kanban foi criada. Adicione uma coluna acima para começar a organizar seus eventos.</p>`;
+        board.innerHTML = `<p class="text-gray-500 p-4">Nenhuma coluna Kanban foi criada.</p>`;
         return;
     }
 
@@ -175,7 +164,7 @@ export function renderKanban(dbState) {
         
         const eventosDaColuna = dbState.eventos
             .filter(evento => evento.colunaId === coluna.id)
-            .sort((a, b) => new Date(a.data) - new Date(b.data)); // Ordena por data
+            .sort((a, b) => new Date(a.data) - new Date(b.data)); 
         
         let cardsHtml = eventosDaColuna.map(evento => {
             const dataFormatada = evento.data ? new Date(evento.data + 'T00:00:00').toLocaleDateString('pt-BR') : 'Data indefinida';
@@ -245,181 +234,7 @@ export function renderClientes(dbState) {
             </tr>`;
         }).join('');
 }
-//
-// ADICIONE ESTA NOVA FUNÇÃO no js/ui.js
-//
-//
-// ADICIONE ESTA NOVA FUNÇÃO no js/ui.js
-//
-export function renderFluxoDeCaixaChart(dbState) {
-    const ctx = document.getElementById('fluxo-caixa-chart');
-    if (!ctx) return; // Sai se o canvas não existir
 
-    // --- 1. Preparar os dados ---
-    const labels = [];
-    const receitasData = new Array(12).fill(0);
-    const custosData = new Array(12).fill(0);
-    
-    const hoje = new Date();
-    hoje.setDate(1); // Garante que estamos no primeiro dia do mês
-
-    // Cria os labels dos últimos 12 meses (ex: "Nov/24", "Dez/24", "Jan/25"...)
-    for (let i = 11; i >= 0; i--) {
-        const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
-        labels.push(d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }));
-    }
-
-    const dataLimiteInferior = new Date(hoje.getFullYear(), hoje.getMonth() - 11, 1);
-    
-    // --- 2. Processar Receitas (Financeiro) ---
-    dbState.financeiro.forEach(item => {
-        if (!item.data) return;
-        const dataPagamento = new Date(item.data + 'T00:00:00');
-        
-        if (dataPagamento >= dataLimiteInferior) {
-            const mesDiff = (dataPagamento.getFullYear() - hoje.getFullYear()) * 12 + (dataPagamento.getMonth() - hoje.getMonth());
-            const index = 11 + mesDiff; // 11 é o índice do mês atual
-            
-            if (index >= 0 && index < 12) {
-                receitasData[index] += parseFloat(item.valor || 0);
-            }
-        }
-    });
-
-    // --- 3. Processar Custos ---
-    dbState.custos.forEach(item => {
-        if (!item.data) return;
-        const dataCusto = new Date(item.data + 'T00:00:00');
-        
-        if (dataCusto >= dataLimiteInferior) {
-            const mesDiff = (dataCusto.getFullYear() - hoje.getFullYear()) * 12 + (dataCusto.getMonth() - hoje.getMonth());
-            const index = 11 + mesDiff;
-            
-            if (index >= 0 && index < 12) {
-                custosData[index] += parseFloat(item.valor || 0);
-            }
-        }
-    });
-
-    // --- 4. Renderizar o Gráfico ---
-    
-    // IMPORTANTE: Destrói o gráfico anterior se ele existir
-    if (myFluxoChart) {
-        myFluxoChart.destroy();
-    }
-
-    // Cria o novo gráfico
-    myFluxoChart = new Chart(ctx.getContext('2d'), {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Recebido (R$)',
-                    data: receitasData,
-                    backgroundColor: 'rgba(59, 130, 246, 0.7)', // Azul
-                    borderColor: 'rgba(59, 130, 246, 1)',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Custos (R$)',
-                    data: custosData,
-                    backgroundColor: 'rgba(239, 68, 68, 0.7)', // Vermelho
-                    borderColor: 'rgba(239, 68, 68, 1)',
-                    borderWidth: 1
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        // Formata o eixo Y como R$
-                        callback: function(value, index, values) {
-                            return 'R$ ' + value.toLocaleString('pt-BR');
-                        }
-                    }
-                }
-            },
-            plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            let label = context.dataset.label || '';
-                            if (label) {
-                                label += ': ';
-                            }
-                            if (context.parsed.y !== null) {
-                                label += 'R$ ' + context.parsed.y.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                            }
-                            return label;
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-export function renderContasAReceber(dbState) {
-    const lista = document.getElementById('lista-contas-a-receber');
-    if (!lista) return;
-
-    let pendencias = [];
-
-    dbState.contratos.forEach(contrato => {
-        // Ignora contratos que não estão ativos
-        if (contrato.status === 'Cancelado' || contrato.status === 'Proposta') {
-            return;
-        }
-
-        const valorTotal = parseFloat(contrato.valorTotal || 0);
-        const totalPago = dbState.financeiro
-            .filter(p => p.contratoId === contrato.id)
-            .reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0);
-
-        const restante = valorTotal - totalPago;
-
-        if (restante > 0) {
-            const cliente = dbState.clientes.find(c => c.id === contrato.clienteId) || { nome: 'Cliente?' };
-            const evento = dbState.eventos.find(e => e.id === contrato.eventoId) || { nome: 'Evento?', data: '1970-01-01' };
-
-            pendencias.push({
-                contratoId: contrato.id,
-                clienteNome: cliente.nome,
-                eventoNome: evento.nome,
-                dataEvento: evento.data,
-                restante: restante
-            });
-        }
-    });
-
-    // Ordena por data do evento (mais antigos primeiro)
-    pendencias.sort((a, b) => new Date(a.dataEvento) - new Date(b.dataEvento));
-
-    if (pendencias.length === 0) {
-        lista.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">Nenhum pagamento pendente!</td></tr>';
-        return;
-    }
-
-    lista.innerHTML = pendencias.map(item => `
-        <tr class="border-b hover:bg-gray-50">
-            <td class="p-3">${item.clienteNome}</td>
-            <td class="p-3">${item.eventoNome}</td>
-            <td class="p-3 font-medium text-red-600">R$ ${item.restante.toFixed(2).replace('.', ',')}</td>
-            <td class="p-3 flex gap-2">
-                <button onclick="window.app.openAddPaymentModal('${item.contratoId}')" class="text-green-500 hover:text-green-700" title="Adicionar Pagamento">
-                    <i data-lucide="plus-circle" class="w-5 h-5"></i>
-                </button>
-                <button onclick="window.app.openDossieModal('${item.contratoId}')" class="text-blue-500 hover:text-blue-700" title="Ver Dossiê">
-                    <i data-lucide="eye" class="w-5 h-5"></i>
-                </button>
-            </td>
-        </tr>
-    `).join('');
-}
 export function renderContratos(dbState) {
     const lista = document.getElementById('lista-contratos');
     lista.innerHTML = dbState.contratos.length === 0 
@@ -522,37 +337,193 @@ export function renderFinanceiro(dbState) {
         }).join('');
 }
 
-        // ATUALIZAÇÃO AQUI: Adicionada data e colspan="6"
-        export function renderCustos(dbState) {
-            const lista = document.getElementById('lista-custos');
-            lista.innerHTML = dbState.custos.length === 0
-                ? '<tr><td colspan="6" class="p-4 text-center text-gray-500">Nenhum custo cadastrado.</td></tr>'
-                : dbState.custos.map(item => {
-                    const evento = item.eventoId ? dbState.eventos.find(e => e.id === item.eventoId) : null; 
-                    const fotografo = dbState.fotografos.find(f => f.id === item.fotografoId);
-                    const valor = parseFloat(item.valor) || 0;
-                    const dataFormatada = item.data 
-                        ? new Date(item.data + 'T00:00:00').toLocaleDateString('pt-BR') 
-                        : 'Sem data';
-        
-                   return `<tr class="border-b hover:bg-gray-50">
-                        <td class="p-4">${dataFormatada}</td>
-                        <td class="p-4">${item.descricao}</td>
-                        <td class="p-4">${evento ? evento.nome : 'Custo Fixo'}</td>
-                        <td class="p-4">${fotografo ? fotografo.nome : 'N/A'}</td>
-                        <td class="p-4">R$ ${valor.toFixed(2).replace('.', ',')}</td>
-                        <td class="p-4"><button onclick="window.app.deleteItem('custos', '${item.id}')" class="text-red-500 hover:text-red-700" title="Excluir Custo"><i data-lucide="trash-2" class="w-5 h-5"></i></button></td>
-                    </tr>`;
-                }).join('');
+export function renderCustos(dbState) {
+    const lista = document.getElementById('lista-custos');
+    lista.innerHTML = dbState.custos.length === 0
+        ? '<tr><td colspan="6" class="p-4 text-center text-gray-500">Nenhum custo cadastrado.</td></tr>'
+        : dbState.custos.map(item => {
+            const evento = item.eventoId ? dbState.eventos.find(e => e.id === item.eventoId) : null; 
+            const fotografo = dbState.fotografos.find(f => f.id === item.fotografoId);
+            const valor = parseFloat(item.valor) || 0;
+            const dataFormatada = item.data 
+                ? new Date(item.data + 'T00:00:00').toLocaleDateString('pt-BR') 
+                : 'Sem data';
+
+            return `<tr class="border-b hover:bg-gray-50">
+                <td class="p-4">${dataFormatada}</td>
+                <td class="p-4">${item.descricao}</td>
+                <td class="p-4">${evento ? evento.nome : 'Custo Fixo'}</td>
+                <td class="p-4">${fotografo ? fotografo.nome : 'N/A'}</td>
+                <td class="p-4">R$ ${valor.toFixed(2).replace('.', ',')}</td>
+                <td class="p-4"><button onclick="window.app.deleteItem('custos', '${item.id}')" class="text-red-500 hover:text-red-700" title="Excluir Custo"><i data-lucide="trash-2" class="w-5 h-5"></i></button></td>
+            </tr>`;
+        }).join('');
+}
+
+export function renderContasAReceber(dbState) {
+    const lista = document.getElementById('lista-contas-a-receber');
+    if (!lista) return;
+
+    let pendencias = [];
+
+    dbState.contratos.forEach(contrato => {
+        if (contrato.status === 'Cancelado' || contrato.status === 'Proposta') {
+            return;
         }
 
+        const valorTotal = parseFloat(contrato.valorTotal || 0);
+        const totalPago = dbState.financeiro
+            .filter(p => p.contratoId === contrato.id)
+            .reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0);
+        
+        const restante = valorTotal - totalPago;
+
+        if (restante > 0) {
+            const cliente = dbState.clientes.find(c => c.id === contrato.clienteId) || { nome: 'Cliente?' };
+            const evento = dbState.eventos.find(e => e.id === contrato.eventoId) || { nome: 'Evento?', data: '1970-01-01' };
+            
+            pendencias.push({
+                contratoId: contrato.id,
+                clienteNome: cliente.nome,
+                eventoNome: evento.nome,
+                dataEvento: evento.data,
+                restante: restante
+            });
+        }
+    });
+
+    pendencias.sort((a, b) => new Date(a.dataEvento) - new Date(b.dataEvento));
+
+    if (pendencias.length === 0) {
+        lista.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">Nenhum pagamento pendente!</td></tr>';
+        return;
+    }
+
+    lista.innerHTML = pendencias.map(item => `
+        <tr class="border-b hover:bg-gray-50">
+            <td class="p-3">${item.clienteNome}</td>
+            <td class="p-3">${item.eventoNome}</td>
+            <td class="p-3 font-medium text-red-600">R$ ${item.restante.toFixed(2).replace('.', ',')}</td>
+            <td class="p-3 flex gap-2">
+                <button onclick="window.app.openAddPaymentModal('${item.contratoId}')" class="text-green-500 hover:text-green-700" title="Adicionar Pagamento">
+                    <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                </button>
+                <button onclick="window.app.openDossieModal('${item.contratoId}')" class="text-blue-500 hover:text-blue-700" title="Ver Dossiê">
+                    <i data-lucide="eye" class="w-5 h-5"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+export function renderFluxoDeCaixaChart(dbState) {
+    const ctx = document.getElementById('fluxo-caixa-chart');
+    if (!ctx) return; 
+
+    const labels = [];
+    const receitasData = new Array(12).fill(0);
+    const custosData = new Array(12).fill(0);
+    
+    const hoje = new Date();
+    hoje.setDate(1); 
+
+    for (let i = 11; i >= 0; i--) {
+        const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+        labels.push(d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }));
+    }
+
+    const dataLimiteInferior = new Date(hoje.getFullYear(), hoje.getMonth() - 11, 1);
+    
+    dbState.financeiro.forEach(item => {
+        if (!item.data) return;
+        const dataPagamento = new Date(item.data + 'T00:00:00');
+        
+        if (dataPagamento >= dataLimiteInferior) {
+            const mesDiff = (dataPagamento.getFullYear() - hoje.getFullYear()) * 12 + (dataPagamento.getMonth() - hoje.getMonth());
+            const index = 11 + mesDiff; 
+            
+            if (index >= 0 && index < 12) {
+                receitasData[index] += parseFloat(item.valor || 0);
+            }
+        }
+    });
+
+    dbState.custos.forEach(item => {
+        if (!item.data) return;
+        const dataCusto = new Date(item.data + 'T00:00:00');
+        
+        if (dataCusto >= dataLimiteInferior) {
+            const mesDiff = (dataCusto.getFullYear() - hoje.getFullYear()) * 12 + (dataCusto.getMonth() - hoje.getMonth());
+            const index = 11 + mesDiff;
+            
+            if (index >= 0 && index < 12) {
+                custosData[index] += parseFloat(item.valor || 0);
+            }
+        }
+    });
+
+    if (myFluxoChart) {
+        myFluxoChart.destroy();
+    }
+
+    myFluxoChart = new Chart(ctx.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Recebido (R$)',
+                    data: receitasData,
+                    backgroundColor: 'rgba(59, 130, 246, 0.7)', 
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Custos (R$)',
+                    data: custosData,
+                    backgroundColor: 'rgba(239, 68, 68, 0.7)', 
+                    borderColor: 'rgba(239, 68, 68, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return 'R$ ' + value.toLocaleString('pt-BR');
+                        }
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += 'R$ ' + context.parsed.y.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                            }
+                            return label;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
 
 // --- 3. RENDERIZAÇÃO DO CALENDÁRIO ---
 
 export function renderCalendario(calendarioData, dbState) {
-    // Garante que estamos no primeiro dia do mês para cálculo
     const dataBase = new Date(calendarioData.getFullYear(), calendarioData.getMonth(), 1);
-    
     const mesAnoEl = document.getElementById('calendario-mes-ano');
     const gridEl = document.getElementById('calendario-grid');
     
@@ -562,7 +533,7 @@ export function renderCalendario(calendarioData, dbState) {
     mesAnoEl.textContent = dataBase.toLocaleDateString('pt-BR', {
         month: 'long',
         year: 'numeric'
-    }).replace(/^\w/, c => c.toUpperCase()); // Capitalize first letter
+    }).replace(/^\w/, c => c.toUpperCase()); 
 
     const primeiroDiaSemana = dataBase.getDay();
     const ultimoDiaMes = new Date(ano, mes + 1, 0).getDate();
@@ -571,12 +542,10 @@ export function renderCalendario(calendarioData, dbState) {
     const hoje = new Date();
     hoje.setHours(0,0,0,0);
 
-    // Dias vazios do início
     for (let i = 0; i < primeiroDiaSemana; i++) {
         gridEl.innerHTML += `<div class="calendar-day empty h-36"></div>`;
     }
 
-    // Dias do mês
     for (let dia = 1; dia <= ultimoDiaMes; dia++) {
         const dataAtual = new Date(ano, mes, dia);
         let todayClass = dataAtual.getTime() === hoje.getTime() ? 'today' : '';
@@ -609,7 +578,6 @@ export function renderCalendario(calendarioData, dbState) {
         `;
     }
 
-    // Dias vazios do fim
     const totalCelulas = primeiroDiaSemana + ultimoDiaMes;
     const celulasRestantes = (7 - (totalCelulas % 7)) % 7;
     for (let i = 0; i < celulasRestantes; i++) {
@@ -617,28 +585,26 @@ export function renderCalendario(calendarioData, dbState) {
     }
 }
 
-// Esta função é chamada pelos botões, recebe o estado `calendarioData` do main.js
 export function mudarMes(offset, calendarioData, dbState) {
     calendarioData.setMonth(calendarioData.getMonth() + offset);
-    renderCalendario(calendarioData, dbState); // Re-renderiza o calendário
+    renderCalendario(calendarioData, dbState); 
 }
 
 
 // --- 4. POPULAÇÃO DE SELECTS ---
 
-// Função auxiliar interna
 function populateSelectWithOptions(selectId, options) {
     const select = document.getElementById(selectId);
     if (!select) return;
-    const selectedValue = select.value; // Salva o valor que estava selecionado
-    select.innerHTML = options.header; // Limpa e adiciona o header
+    const selectedValue = select.value; 
+    select.innerHTML = options.header; 
     options.data.forEach(item => {
         const option = document.createElement('option');
         option.value = item.id;
         option.textContent = item.nome;
         select.appendChild(option);
     });
-    select.value = selectedValue; // Tenta restaurar o valor
+    select.value = selectedValue; 
 }
 
 export function populateEventoClienteSelect(dbState) {
@@ -649,7 +615,6 @@ export function populateEventoClienteSelect(dbState) {
 }
 
 export function populateEventoSelect(dbState) {
-    // ATUALIZAÇÃO AQUI: Alterado o texto do 'header'
     populateSelectWithOptions('custo-evento', { 
         header: '<option value="">Custo Fixo / Nenhum Evento</option>', 
         data: dbState.eventos 
@@ -701,14 +666,39 @@ export function populateEntregaEventoSelect(dbState, selectedEventIdForEntrega) 
         option.textContent = `${evento.nome} ${nomeCliente}`;
         select.appendChild(option);
     });
-    // Restaura a seleção se houver uma
     select.value = selectedEventIdForEntrega || "";
+}
+
+// --- NOVO: FUNÇÃO PARA OS PACOTES DINÂMICOS ---
+/**
+ * Preenche um select com os pacotes filtrados por categoria.
+ * Esta função será usada tanto no Editor de Templates quanto no Gerador.
+ */
+export function updatePackageSelect(selectElementId, categoryId, dbState) {
+    const select = document.getElementById(selectElementId);
+    if (!select) return;
+
+    // Limpa e reseta
+    select.innerHTML = '<option value="">Selecione um Pacote...</option>';
+
+    if (!categoryId || !dbState.pacotes) return;
+
+    // Filtra os pacotes pela categoria
+    const pacotesFiltrados = dbState.pacotes.filter(p => p.package_category_id === categoryId);
+
+    pacotesFiltrados.forEach(pacote => {
+        const option = document.createElement('option');
+        option.value = pacote.package_name; 
+        const valorFormatado = (pacote.package_value || 0).toFixed(2).replace('.', ',');
+        option.textContent = `${pacote.package_name} (R$ ${valorFormatado})`;
+        option.dataset.valor = pacote.package_value;
+        select.appendChild(option);
+    });
 }
 
 
 // --- 5. LÓGICA DE UI DA SEÇÃO "ENTREGA" ---
 
-// Função auxiliar de cálculo
 export function getEntregaInfo(evento, tipo) {
     const dataEventoStr = evento.data;
     const hoje = new Date();
@@ -811,7 +801,7 @@ export function renderEntregaCards(evento, dbState) {
         `;
     }).join('');
 
-    lucide.createIcons(); // Precisa chamar aqui por ser uma renderização específica
+    if (window.lucide) window.lucide.createIcons(); 
 }
 
 export function renderEntregasAtrasadas(dbState) {
@@ -871,35 +861,31 @@ export function renderEntregasAtrasadas(dbState) {
         `;
     }).join('');
 
-    lucide.createIcons(); // Precisa chamar aqui também
+    if (window.lucide) window.lucide.createIcons();
 }
 
 
 // --- 6. FUNÇÕES DE NAVEGAÇÃO E MODAIS ---
 
 export function showSection(sectionId, dbState, calendarioData) {
-    // Fecha o menu mobile
     if (window.innerWidth < 768) {
         document.getElementById('sidebar').classList.add('-translate-x-full');
     }
     
-    // Esconde todas as seções
     document.querySelectorAll('.content-section').forEach(section => section.classList.add('hidden'));
     
-    // Mostra a seção clicada
     const sectionElement = document.getElementById(`section-${sectionId}`);
     if (sectionElement) {
         sectionElement.classList.remove('hidden');
     }
     
-    // Atualiza o link ativo
     document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('bg-gray-700'));
     const activeLink = document.querySelector(`a[onclick*="showSection('${sectionId}')"]`);
     if (activeLink) {
         activeLink.classList.add('bg-gray-700');
     }
 
-    // --- Lógica Específica por Seção ---
+    // Lógica Específica por Seção
     if (sectionId === 'entrega') {
         document.getElementById('entrega-evento-select').value = '';
         document.getElementById('entrega-default-view').classList.remove('hidden');
@@ -911,31 +897,27 @@ export function showSection(sectionId, dbState, calendarioData) {
         document.getElementById('form-contrato').reset();
         document.getElementById('contrato-data').valueAsDate = new Date();
     }
-    // ADICIONE ESTE BLOCO NOVO
-    if (sectionId === 'financeiro') {
-        // Renderiza as listas financeiras avançadas quando a seção é aberta
-        renderContasAReceber(dbState);
-        renderFluxoDeCaixaChart(dbState);
-        // Na Fase 3, também chamaremos o renderFluxoDeCaixaChart(dbState) aqui
-    }
-    if (sectionId === 'templates') {
-        clearTemplateForm(); // Limpa o formulário ao entrar na seção
-        renderTemplates(dbState); // Renderiza a lista
-    }
-    if (sectionId === 'pacotes') {
-        clearPacoteForm();
-        renderPacotes(dbState);
-    }
     if (sectionId === 'calendario') {
         renderCalendario(calendarioData, dbState);
     }
     if (sectionId === 'gerador') {
-        // Limpa o gerador ao clicar no menu
         document.getElementById('contractForm').reset();
         const contractTypeSelect = document.getElementById('contractType');
         contractTypeSelect.value = '';
         contractTypeSelect.dispatchEvent(new Event('change'));
         document.getElementById('outputSection').classList.add('hidden');
+    }
+    if (sectionId === 'templates') {
+        clearTemplateForm();
+        renderTemplates(dbState);
+    }
+    if (sectionId === 'pacotes') {
+        clearPacoteForm();
+        renderPacotes(dbState);
+    }
+    if (sectionId === 'financeiro') {
+        renderContasAReceber(dbState);
+        renderFluxoDeCaixaChart(dbState);
     }
 }
 
@@ -948,10 +930,8 @@ export function abrirGerador(contratoId, dbState) {
     const cliente = dbState.clientes.find(c => c.id === contrato.clienteId);
     const evento = dbState.eventos.find(e => e.id === contrato.eventoId);
     
-    // Mudar para a seção do gerador
-    showSection('gerador', dbState, new Date()); // Passa um new Date() p/ calendarioData, não é usado aqui
+    showSection('gerador', dbState, new Date());
     
-    // Preencher os dados
     if (cliente) {
         document.getElementById('clientName').value = cliente.nome || '';
         document.getElementById('clientCPF').value = cliente.documento || '';
@@ -964,7 +944,7 @@ export function abrirGerador(contratoId, dbState) {
         document.getElementById('eventLocal').value = evento.local || '';
         document.getElementById('package').value = evento.descricao || '';
         
-        let contractTypeValue = '4'; // Padrão "Eventos em Geral"
+        let contractTypeValue = '4'; 
         if (evento.tipo === 'Infantil') contractTypeValue = '1';
         if (evento.tipo === 'Casamento') contractTypeValue = '2';
         
@@ -982,19 +962,13 @@ export function abrirGerador(contratoId, dbState) {
 }
 
 export function abrirNovoEventoDoCalendario(data) {
-    // Chama a função global (que será definida no main.js) para mudar de aba
     window.app.showSection('eventos'); 
-    
-    // Preenche a data e foca no nome
     document.getElementById('evento-data').value = data;
     document.getElementById('evento-nome').focus();
 }
 
 export function viewEntregaFromAtraso(eventId, dbState) {
     document.getElementById('entrega-evento-select').value = eventId;
-    
-    // Esta função é chamada pelo main.js, que vai atualizar o 'selectedEventIdForEntrega'
-    // e chamar a renderização correta
     
     const evento = dbState.eventos.find(e => e.id === eventId);
     if(evento) {
@@ -1018,7 +992,6 @@ export function openDossieModal(contratoId, dbState) {
     const pagamentos = dbState.financeiro.filter(p => p.contratoId === contratoId);
     const custos = dbState.custos.filter(c => c.eventoId === contrato.eventoId);
 
-    // Cálculos
     const valorTotal = parseFloat(contrato.valorTotal || 0);
     const totalPago = pagamentos.reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0);
     const restante = valorTotal - totalPago;
@@ -1026,7 +999,6 @@ export function openDossieModal(contratoId, dbState) {
     const lucroLiquido = valorTotal - totalCusto;
     const dataEventoFormatada = evento.data ? new Date(evento.data + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/A';
 
-    // Preenche Informações
     document.getElementById('dossie-evento-nome').innerText = evento.nome || 'N/A';
     document.getElementById('dossie-cliente-nome').innerText = cliente.nome || 'N/A';
     document.getElementById('dossie-cliente-contato').innerText = `${cliente.telefone || 'Sem telefone'} | ${cliente.email || 'Sem email'}`;
@@ -1040,7 +1012,6 @@ export function openDossieModal(contratoId, dbState) {
         linkEl.innerText = 'Nenhum link salvo';
     }
 
-    // Preenche Financeiro
     document.getElementById('dossie-valor-contrato').innerText = `R$ ${valorTotal.toFixed(2).replace('.', ',')}`;
     document.getElementById('dossie-total-pago').innerText = `R$ ${totalPago.toFixed(2).replace('.', ',')}`;
     document.getElementById('dossie-valor-restante').innerText = `R$ ${restante.toFixed(2).replace('.', ',')}`;
@@ -1058,7 +1029,6 @@ export function openDossieModal(contratoId, dbState) {
         pagamentosListaEl.innerHTML = `<p class="text-gray-500">Nenhum pagamento registrado.</p>`;
     }
 
-    // Preenche Lucratividade
     document.getElementById('dossie-lucro-valor').innerText = `+ R$ ${valorTotal.toFixed(2).replace('.', ',')}`;
     document.getElementById('dossie-lucro-custos').innerText = `- R$ ${totalCusto.toFixed(2).replace('.', ',')}`;
     document.getElementById('dossie-lucro-liquido').innerText = `R$ ${lucroLiquido.toFixed(2).replace('.', ',')}`;
@@ -1078,7 +1048,6 @@ export function openDossieModal(contratoId, dbState) {
         custosListaEl.innerHTML = `<p class="text-gray-500">Nenhum custo registrado.</p>`;
     }
 
-    // Preenche Entregas
     const entregasListaEl = document.getElementById('dossie-entregas-lista');
     const tiposEntrega = ['previa', 'midia', 'album'];
     entregasListaEl.innerHTML = tiposEntrega.map(tipo => {
@@ -1093,7 +1062,6 @@ export function openDossieModal(contratoId, dbState) {
                 </div>`;
     }).join('');
 
-    // Exibe o Modal
     document.getElementById('dossie-modal').classList.remove('hidden');
     document.getElementById('dossie-modal').classList.add('flex');
 }
@@ -1101,7 +1069,7 @@ export function openDossieModal(contratoId, dbState) {
 export function closeDossieModal() {
     document.getElementById('dossie-modal').classList.add('hidden');
     document.getElementById('dossie-modal').classList.remove('flex');
-    document.getElementById('dossie-content').scrollTop = 0; // Reseta o scroll
+    document.getElementById('dossie-content').scrollTop = 0; 
 }
 
 export function openAddPaymentModal(contratoId) {
@@ -1148,20 +1116,15 @@ export function showLoginError(message) {
 
 export function hideLoginError() {
     document.getElementById('login-error').classList.add('hidden');
-
 }
-//
-// ADICIONE ESTAS 3 NOVAS FUNÇÕES no js/ui.js
-//
 
-/**
- * Renderiza a lista de templates salvos na sidebar do editor.
- */
+// --- NOVAS FUNÇÕES DE TEMPLATE (Fase 1 - Gerenciador de Templates) ---
+
 export function renderTemplates(dbState) {
     const lista = document.getElementById('lista-templates');
     if (!lista) return;
 
-    if (dbState.templates.length === 0) {
+    if (!dbState.templates || dbState.templates.length === 0) {
         lista.innerHTML = '<p class="text-sm text-gray-500">Nenhum template salvo.</p>';
         return;
     }
@@ -1179,60 +1142,51 @@ export function renderTemplates(dbState) {
             </div>
         </div>
     `).join('');
+    
+    if (window.lucide) window.lucide.createIcons();
 }
 
-/**
- * Preenche o formulário de template para edição.
- */
-/**
- * Preenche o formulário de template para edição.
- */
 export function populateTemplateForm(template) {
     document.getElementById('template-id').value = template.id;
     document.getElementById('template-titulo').value = template.titulo;
     document.getElementById('template-corpo').value = template.corpo;
-
-    // 1. Seta o Tipo
+    
+    // 1. Define o Tipo
     const typeSelect = document.getElementById('template-link-tipo');
     typeSelect.value = template.link_tipo || '';
-
-    // 2. Dispara o evento 'change' manualmente para carregar os pacotes desse tipo
-    // Precisamos passar o dbState, mas aqui não temos acesso direto a ele facilmente.
-    // Vamos usar o window.app.getDbState() que criamos antes.
+    
+    // 2. Preenche a lista de pacotes baseada no Tipo
     if (window.app && window.app.getDbState) {
         const dbState = window.app.getDbState();
-        // Chama a função que acabamos de criar acima (updatePackageSelect)
-        // Nota: Precisamos importar 'updatePackageSelect' ou chamar ela direto se estiver no mesmo arquivo
+        // Chama a função que acabamos de criar
         updatePackageSelect('template-link-pacote', template.link_tipo, dbState);
     }
 
-    // 3. Seta o Pacote (agora que o select foi preenchido)
-    document.getElementById('template-link-pacote').value = template.link_pacote || '';
-
+    // 3. Define o Pacote Selecionado (depois de popular)
+    // Pequeno timeout para garantir que o select foi populado
+    setTimeout(() => {
+        document.getElementById('template-link-pacote').value = template.link_pacote || '';
+    }, 50);
+    
     document.getElementById('section-templates').scrollIntoView({ behavior: 'smooth' });
 }
-/**
- * Limpa o formulário de template (para modo "Novo" ou após salvar).
- */
-/**
- * Limpa o formulário de template (para modo "Novo" ou após salvar).
- */
+
 export function clearTemplateForm() {
     document.getElementById('form-template').reset();
-    document.getElementById('template-id').value = ''; // Garante que o ID oculto está limpo
+    document.getElementById('template-id').value = ''; 
 }
-/**
- * Renderiza a lista de pacotes salvos, agrupados por categoria.
- */
+
+// --- NOVAS FUNÇÕES DE PACOTES (Fase 1 - Gerenciador de Pacotes) ---
+
 export function renderPacotes(dbState) {
     const container = document.getElementById('lista-pacotes-container');
     if (!container) return;
 
-  if (!dbState.pacotes || dbState.pacotes.length === 0) {
+    if (!dbState.pacotes || dbState.pacotes.length === 0) {
         container.innerHTML = '<p class="text-gray-500">Nenhum pacote cadastrado.</p>';
         return;
     }
-
+    
     // 1. Agrupa os pacotes por categoria
     const pacotesAgrupados = dbState.pacotes.reduce((acc, pacote) => {
         const category = pacote.package_category_name || "Sem Categoria";
@@ -1245,11 +1199,11 @@ export function renderPacotes(dbState) {
 
     // 2. Renderiza o HTML
     container.innerHTML = Object.keys(pacotesAgrupados).map(categoryName => {
-
+        
         // Renderiza os itens (pacotes) para esta categoria
         const itemsHtml = pacotesAgrupados[categoryName].map(pacote => {
             const valorFormatado = (pacote.package_value || 0).toFixed(2).replace('.', ',');
-
+            
             return `
                 <div class="flex justify-between items-center p-2 border-t">
                     <div>
@@ -1277,13 +1231,13 @@ export function renderPacotes(dbState) {
                 </div>
             </div>
         `;
-
+        
     }).join('');
+
+    // Recarrega ícones após renderizar
+    if (window.lucide) window.lucide.createIcons();
 }
 
-/**
- * Preenche o formulário de pacote para edição.
- */
 export function populatePacoteForm(pacote) {
     document.getElementById('pacote-id').value = pacote.id;
     document.getElementById('pacote-tipo-vinculo').value = pacote.package_category_id || '';
@@ -1291,36 +1245,7 @@ export function populatePacoteForm(pacote) {
     document.getElementById('pacote-valor').value = pacote.package_value || 0;
 }
 
-/**
- * Limpa o formulário de pacote.
- */
 export function clearPacoteForm() {
     document.getElementById('form-pacote').reset();
     document.getElementById('pacote-id').value = ''; 
-}
-/**
- * Preenche um select com os pacotes filtrados por categoria.
- */
-export function updatePackageSelect(selectElementId, categoryId, dbState) {
-    const select = document.getElementById(selectElementId);
-    if (!select) return;
-
-    select.innerHTML = '<option value="">Selecione um Pacote...</option>';
-
-    if (!categoryId || !dbState.pacotes) return;
-
-    // Filtra os pacotes pela categoria (Ex: "1" para Infantil)
-    const pacotesFiltrados = dbState.pacotes.filter(p => p.package_category_id === categoryId);
-
-    pacotesFiltrados.forEach(pacote => {
-        const option = document.createElement('option');
-        // Salvamos o NOME COMPLETO como valor, pois é isso que o template usa para o vínculo
-        option.value = pacote.package_name; 
-        // Mostra o Nome e o Valor no texto
-        const valor = (pacote.package_value || 0).toFixed(2).replace('.', ',');
-        option.textContent = `${pacote.package_name} (R$ ${valor})`;
-        // Salvamos o valor monetário num atributo de dados para usar depois
-        option.dataset.valor = pacote.package_value;
-        select.appendChild(option);
-    });
 }
