@@ -117,25 +117,35 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         clearPacoteForm: () => ui.clearPacoteForm(),
 
-        // HELPERS IMPORTANTES
+        // FUNÇÃO DE EDITAR COLUNA
+        editColumn: (columnId, currentName) => {
+            const newName = prompt("Novo nome para a coluna:", currentName);
+            if (newName && newName.trim() !== "" && newName !== currentName) {
+                store.updateColumn(userId, columnId, newName.trim())
+                    .catch(e => alert(e.message));
+            }
+        },
+
         getDbState: () => dbState,
-        
-        // #####################################################
-        // A LINHA QUE FALTAVA ESTÁ AQUI EMBAIXO 👇
-        // #####################################################
         updatePackageSelect: ui.updatePackageSelect, 
 
-        // Ações
         deleteItem: (collectionName, id) => {
             if (!userId) return;
             let message = `Tem certeza que deseja excluir este item?`;
+            
             if (collectionName === 'clientes' || collectionName === 'eventos') {
                 message += `\nNenhum contrato, evento ou pagamento associado será excluído.`;
             } else if (collectionName === 'contratos') {
                 message += `\n\nATENÇÃO: Isso NÃO excluirá os pagamentos já feitos.`;
             } else if (collectionName === 'financeiro') {
                 message = `Tem certeza que deseja excluir este PAGAMENTO?`;
+            } else if (collectionName === 'colunas') {
+                // AVISO IMPORTANTE PARA COLUNAS
+                message = `⚠️ ATENÇÃO ⚠️\n\nSe você excluir esta coluna, os eventos que estão nela NÃO serão apagados, mas ficarão "invisíveis" no quadro até que você os mova para outra coluna (ou recrie esta coluna).\n\nTem certeza?`;
+            } else if (collectionName === 'pacotes') {
+                message = `Tem certeza que deseja excluir este PACOTE?\n\nIsso não afetará contratos já gerados.`;
             }
+
             if (confirm(message)) {
                 store.deleteSingleItem(userId, collectionName, id).catch(e => alert(e.message)); 
             }
@@ -330,3 +340,4 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('payment-date').valueAsDate = new Date();
     document.getElementById('custo-data').valueAsDate = new Date();
 });
+
