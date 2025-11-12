@@ -1,4 +1,8 @@
-// js/main.js (VERSÃO DIAGNÓSTICO)
+// js/main.js
+
+// ######################################################
+// ARQUIVO 7: O CÉREBRO MESTRE (main.js) - VERSÃO FINAL
+// ######################################################
 
 import { setupAuthListeners } from './auth.js';
 import * as store from './store.js'; 
@@ -16,8 +20,9 @@ let calendarioData = new Date();
 let selectedEventIdForEntrega = null; 
 
 function onDataChange(newState) {
-    // console.log("Dados recebidos...", newState); // Comentei para limpar o log
+    // console.log("Dados recebidos:", newState); // Debug
     dbState = newState; 
+    
     ui.updateDashboard(dbState);
     ui.renderKanban(dbState);
     ui.renderClientes(dbState);
@@ -26,6 +31,7 @@ function onDataChange(newState) {
     ui.renderFinanceiro(dbState);
     ui.renderCustos(dbState); 
     ui.renderCalendario(calendarioData, dbState);
+    
     ui.populateEventoClienteSelect(dbState);
     ui.populateEventoSelect(dbState);
     ui.populateCustoFotografoSelect(dbState);
@@ -39,19 +45,20 @@ function onDataChange(newState) {
         ui.renderEntregasAtrasadas(dbState);
     }
     
-    if (!document.getElementById('section-financeiro').classList.contains('hidden')) {
+    // Verifica se a seção financeira está ativa para renderizar
+    const financeiroSection = document.getElementById('section-financeiro');
+    if (financeiroSection && !financeiroSection.classList.contains('hidden')) {
         ui.renderContasAReceber(dbState);
         ui.renderFluxoDeCaixaChart(dbState);
     }
 
     ui.renderTemplates(dbState);
-    ui.renderPacotes(dbState); // Renderiza os pacotes
+    ui.renderPacotes(dbState);
 
     if (window.lucide) window.lucide.createIcons();
 }
 
 function onLogin(user) {
-    console.log("✅ [1] Login detectado:", user.email);
     userId = user.uid;
     document.getElementById('login-overlay').classList.add('hidden');
     document.getElementById('app-container').classList.remove('hidden');
@@ -61,7 +68,6 @@ function onLogin(user) {
 }
 
 function onLogout() {
-    console.log("⛔ [Logout]");
     userId = null;
     document.getElementById('login-overlay').classList.remove('hidden');
     document.getElementById('app-container').classList.add('hidden');
@@ -74,19 +80,10 @@ function onLogout() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("🚀 [0] Aplicação Iniciada (DOM Loaded)");
-
-    setupAuthListeners(onLogin, onLogout);
     
-    try {
-        initGeradorListeners();
-        console.log("✅ [2] Gerador Iniciado");
-    } catch (e) { console.error("❌ Erro no Gerador:", e); }
-
-    try {
-        initDragAndDrop(); 
-        console.log("✅ [3] DragAndDrop Iniciado");
-    } catch (e) { console.error("❌ Erro no DragDrop:", e); }
+    setupAuthListeners(onLogin, onLogout);
+    initGeradorListeners();
+    initDragAndDrop(); 
     
     window.app = {
         showSection: (sectionId) => ui.showSection(sectionId, dbState, calendarioData),
@@ -105,6 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
             selectedEventIdForEntrega = eventId;
             ui.viewEntregaFromAtraso(eventId, dbState);
         },
+        
         editTemplate: (templateId) => {
             if (!templateId) return;
             const template = dbState.templates.find(t => t.id === templateId);
@@ -112,7 +110,6 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         clearTemplateForm: () => ui.clearTemplateForm(),
         
-        // Funções de Pacotes
         editPacote: (pacoteId) => {
             if (!pacoteId) return;
             const pacote = dbState.pacotes.find(p => p.id === pacoteId);
@@ -120,8 +117,15 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         clearPacoteForm: () => ui.clearPacoteForm(),
 
+        // HELPERS IMPORTANTES
         getDbState: () => dbState,
+        
+        // #####################################################
+        // A LINHA QUE FALTAVA ESTÁ AQUI EMBAIXO 👇
+        // #####################################################
+        updatePackageSelect: ui.updatePackageSelect, 
 
+        // Ações
         deleteItem: (collectionName, id) => {
             if (!userId) return;
             let message = `Tem certeza que deseja excluir este item?`;
@@ -146,7 +150,60 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // LISTENERS
+    // --- LISTENERS GERAIS ---
+
+    // Listener: Atualizar Pacotes no Editor de Templates
+    const templateTypeSelect = document.getElementById('template-link-tipo');
+    if (templateTypeSelect) {
+        templateTypeSelect.addEventListener('change', (e) => {
+            ui.updatePackageSelect('template-link-pacote', e.target.value, dbState);
+        });
+    }
+
+    // Listener: Salvar Pacote
+    const pacoteForm = document.getElementById('form-pacote');
+    if (pacoteForm) {
+        pacoteForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            try {
+                const pacoteId = e.target.elements['pacote-id'].value;
+                const select = e.target.elements['pacote-tipo-vinculo'];
+                const category_id = select.value;
+                const category_name = select.options[select.selectedIndex].text; 
+                
+                const data = {
+                    package_category_id: category_id,
+                    package_category_name: category_name,
+                    package_name: e.target.elements['pacote-nome'].value,
+                    package_value: parseFloat(e.target.elements['pacote-valor'].value)
+                };
+
+                store.savePacote(userId, data, pacoteId || null)
+                    .then(() => ui.clearPacoteForm())
+                    .catch(e => alert("Falha ao salvar pacote: " + e.message));
+            } catch (err) { alert("Erro: " + err.message); }
+        });
+    }
+
+    // Listener: Salvar Template
+    const templateForm = document.getElementById('form-template');
+    if (templateForm) {
+        templateForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const templateId = e.target.elements['template-id'].value;
+            const data = {
+                titulo: e.target.elements['template-titulo'].value,
+                corpo: e.target.elements['template-corpo'].value,
+                link_tipo: e.target.elements['template-link-tipo'].value,
+                link_pacote: e.target.elements['template-link-pacote'].value
+            };
+            store.saveTemplate(userId, data, templateId || null)
+                .then(() => ui.clearTemplateForm())
+                .catch(e => alert("Falha ao salvar template: " + e.message));
+        });
+    }
+
+    // Outros Listeners
     document.getElementById('form-cliente').addEventListener('submit', (e) => {
         e.preventDefault();
         const data = {
@@ -224,70 +281,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = { nome: nomeColuna, ordem: proximaOrdem };
         store.handleFormSubmit(userId, 'colunas', data).then(() => e.target.reset()).catch(e => alert(e.message));
     });
-    
-    document.getElementById('form-template').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const templateId = e.target.elements['template-id'].value;
-        const data = {
-            titulo: e.target.elements['template-titulo'].value,
-            corpo: e.target.elements['template-corpo'].value,
-            link_tipo: e.target.elements['template-link-tipo'].value,
-            link_pacote: e.target.elements['template-link-pacote'].value
-        };
-        store.saveTemplate(userId, data, templateId || null).then(() => ui.clearTemplateForm()).catch(e => alert("Falha ao salvar template: " + e.message));
-    });
-    // Listener para atualizar pacotes no EDITOR DE TEMPLATES
-    // (Adicione isso logo após o listener do 'form-template')
-    const templateTypeSelect = document.getElementById('template-link-tipo');
-    if (templateTypeSelect) {
-        templateTypeSelect.addEventListener('change', (e) => {
-            ui.updatePackageSelect('template-link-pacote', e.target.value, dbState);
-        });
-    }
-
-    // #############################################################
-    // AQUI ESTÁ O CÓDIGO DO PACOTE COM LOGS DE DEBUG
-    // #############################################################
-    const pacoteForm = document.getElementById('form-pacote');
-    if (pacoteForm) {
-        console.log("✅ [4] Formulário de Pacotes encontrado no HTML!");
-        pacoteForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            console.log("🟡 [CLICK] Botão Salvar Pacote Clicado!");
-
-            try {
-                const pacoteId = e.target.elements['pacote-id'].value;
-                const select = e.target.elements['pacote-tipo-vinculo'];
-                const category_id = select.value;
-                const category_name = select.options[select.selectedIndex].text; 
-                
-                const data = {
-                    package_category_id: category_id,
-                    package_category_name: category_name,
-                    package_name: e.target.elements['pacote-nome'].value,
-                    package_value: parseFloat(e.target.elements['pacote-valor'].value)
-                };
-
-                console.log("🟡 [DADOS] Enviando para Store:", data);
-
-                store.savePacote(userId, data, pacoteId || null)
-                    .then(() => {
-                        console.log("🟢 [SUCESSO] Pacote salvo!");
-                        ui.clearPacoteForm();
-                    })
-                    .catch(e => {
-                        console.error("🔴 [ERRO STORE]", e);
-                        alert("Falha ao salvar pacote: " + e.message);
-                    });
-            } catch (err) {
-                console.error("🔴 [ERRO JS]", err);
-                alert("Erro interno no JS: " + err.message);
-            }
-        });
-    } else {
-        console.error("🔴 [ERRO CRÍTICO] Formulário 'form-pacote' NÃO encontrado no HTML!");
-    }
-    // #############################################################
 
     document.getElementById('add-payment-form').addEventListener('submit', (e) => {
         e.preventDefault();
@@ -313,7 +306,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     document.getElementById('cancel-payment-button').addEventListener('click', ui.closeAddPaymentModal);
     document.getElementById('cancel-edit-contract-button').addEventListener('click', ui.closeEditContratoModal);
-    
     document.getElementById('contrato-cliente').addEventListener('change', (e) => { ui.updateContratoEventoSelect(e.target.value, dbState); });
     
     document.getElementById('entrega-evento-select').addEventListener('change', (e) => {
@@ -332,11 +324,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     document.getElementById('calendario-prev').addEventListener('click', () => { ui.mudarMes(-1, calendarioData, dbState); });
     document.getElementById('calendario-next').addEventListener('click', () => { ui.mudarMes(1, calendarioData, dbState); });
-    
     document.getElementById('mobile-menu-button').addEventListener('click', () => { document.getElementById('sidebar').classList.toggle('-translate-x-full'); });
 
     document.getElementById('contrato-data').valueAsDate = new Date();
     document.getElementById('payment-date').valueAsDate = new Date();
     document.getElementById('custo-data').valueAsDate = new Date();
 });
-
