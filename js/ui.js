@@ -1162,21 +1162,21 @@ export function renderTemplates(dbState) {
 export function populateTemplateForm(template) {
     document.getElementById('template-id').value = template.id;
     document.getElementById('template-titulo').value = template.titulo;
-    document.getElementById('template-corpo').value = template.corpo;
+    
+    // ATUALIZAÇÃO: Usa innerHTML para o editor rico
+    document.getElementById('template-corpo').innerHTML = template.corpo;
     
     // 1. Define o Tipo
     const typeSelect = document.getElementById('template-link-tipo');
     typeSelect.value = template.link_tipo || '';
     
-    // 2. Preenche a lista de pacotes baseada no Tipo
+    // 2. Preenche a lista de pacotes
     if (window.app && window.app.getDbState) {
         const dbState = window.app.getDbState();
-        // Chama a função que acabamos de criar
         updatePackageSelect('template-link-pacote', template.link_tipo, dbState);
     }
 
-    // 3. Define o Pacote Selecionado (depois de popular)
-    // Pequeno timeout para garantir que o select foi populado
+    // 3. Define o Pacote Selecionado
     setTimeout(() => {
         document.getElementById('template-link-pacote').value = template.link_pacote || '';
     }, 50);
