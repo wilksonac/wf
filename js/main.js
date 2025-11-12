@@ -266,17 +266,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Listener: Salvar Template (ATUALIZADO PARA EDITOR RICO)
     const templateForm = document.getElementById('form-template');
     if (templateForm) {
         templateForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const templateId = e.target.elements['template-id'].value;
+            
+            // ATENÇÃO: Agora pegamos o .innerHTML do div, não o .value
+            const corpoContent = document.getElementById('template-corpo').innerHTML;
+
             const data = {
                 titulo: e.target.elements['template-titulo'].value,
-                corpo: e.target.elements['template-corpo'].value,
+                corpo: corpoContent, // <-- AQUI MUDOU
                 link_tipo: e.target.elements['template-link-tipo'].value,
                 link_pacote: e.target.elements['template-link-pacote'].value
             };
+            
             store.saveTemplate(userId, data, templateId || null)
                 .then(() => ui.clearTemplateForm())
                 .catch(e => alert("Falha ao salvar template: " + e.message));
@@ -409,3 +415,4 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('payment-date').valueAsDate = new Date();
     document.getElementById('custo-data').valueAsDate = new Date();
 });
+
