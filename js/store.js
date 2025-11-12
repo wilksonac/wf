@@ -237,3 +237,17 @@ export async function deleteClientAndRelations(userId, clienteId) {
 
     await batch.commit();
 }
+/**
+ * Atualiza o nome de uma coluna Kanban.
+ */
+export async function updateColumn(userId, columnId, newName) {
+    if (!userId || !columnId || !newName) return;
+    const docRef = doc(db, `users/${userId}/colunas/${columnId}`);
+    try {
+        await updateDoc(docRef, { nome: newName });
+    } catch (error) {
+        console.error("Erro ao atualizar coluna: ", error);
+        throw new Error("Falha ao renomear a coluna.");
+    }
+}
+
