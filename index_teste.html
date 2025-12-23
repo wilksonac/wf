@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gestor de Contratos - Fotografia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Estilos do Editor Rico */
+        .editor-toolbar {
+            background-color: #f3f4f6; border: 1px solid #d1d5db; border-bottom: none;
+            border-radius: 0.375rem 0.375rem 0 0; padding: 0.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap;
+        }
+        .editor-btn {
+            background-color: white; border: 1px solid #d1d5db; border-radius: 0.25rem;
+            padding: 0.25rem 0.5rem; font-size: 0.875rem; font-weight: 600; cursor: pointer;
+        }
+        .editor-btn:hover { background-color: #e5e7eb; }
+        .rich-editor {
+            min-height: 400px; max-height: 600px; overflow-y: auto; border: 1px solid #d1d5db;
+            border-radius: 0 0 0.375rem 0.375rem; padding: 1rem; background-color: white; font-family: 'Georgia', serif; outline: none;
+        }
+        .rich-editor p { margin-bottom: 1em; }
+        /* Kanban e Sidebar */
+        .kanban-cards { min-height: 150px; }
+        
+        /* Ajuste para Mobile - Barra Inferior */
+        .bottom-nav-item.active { color: #2563eb; }
+        .bottom-nav-item.active svg { stroke-width: 2.5px; }
+        
+        @media print { body * { visibility: hidden; } #contractOutput, #contractOutput * { visibility: visible; position: absolute; left: 0; top: 0; width: 100%; } .no-print { display: none; } }
+    </style>
+</head>
+<body class="bg-gray-100 pb-20 md:pb-0"> <!-- Padding bottom no body mobile -->
+
+    <!-- Login -->
+    <div id="login-overlay" class="fixed inset-0 bg-gray-200 z-50 flex items-center justify-center">
+        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-sm mx-4">
+            <div class="flex items-center justify-center mb-6">
+                <i data-lucide="camera" class="h-10 w-10 text-gray-700"></i>
+                <h1 class="text-2xl font-bold ml-2 text-gray-800">Gestor</h1>
+            </div>
+            <form id="login-form">
+                <input type="email" id="email" class="w-full p-3 mb-4 border rounded" placeholder="Email" required>
+                <input type="password" id="password" class="w-full p-3 mb-6 border rounded" placeholder="Senha" required>
+                <div id="login-error" class="text-red-500 text-sm mb-4 text-center hidden"></div>
+                <div class="flex gap-4">
+                    <button type="submit" id="login-button" class="w-full bg-blue-500 text-white py-3 rounded font-bold">Entrar</button>
+                    <button type="button" id="register-button" class="w-full bg-gray-600 text-white py-3 rounded font-bold">Registrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modais Auxiliares (Mesma estrutura) -->
+    <div id="add-payment-modal" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Novo Pagamento</h2>
+            <form id="add-payment-form">
+                <input type="hidden" id="payment-contrato-id">
+                <input type="number" step="0.01" id="payment-amount" class="w-full p-2 mb-4 border rounded" placeholder="Valor (R$)" required>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <input type="date" id="payment-date" class="w-full p-2 border rounded" required>
+                    <select id="payment-method" class="w-full p-2 border rounded" required>
+                        <option value="PIX">PIX</option><option value="Dinheiro">Dinheiro</option><option value="Cartão">Cartão</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-4">
+                    <button type="button" id="cancel-payment-button" class="bg-gray-300 px-4 py-2 rounded">Cancelar</button>
+                    <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="edit-contract-modal" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Editar Contrato</h2>
+            <form id="edit-contract-form">
+                <input type="hidden" id="edit-contrato-id">
+                <select id="edit-contrato-status" class="w-full p-2 mb-4 border rounded">
+                    <option value="Proposta">Proposta</option><option value="Assinado">Assinado</option><option value="Concluído">Concluído</option><option value="Cancelado">Cancelado</option>
+                </select>
+                <input type="url" id="edit-contrato-link" placeholder="Link PDF" class="w-full p-2 mb-4 border rounded">
+                <textarea id="edit-contrato-forma-pagamento" class="w-full p-2 mb-4 border rounded" placeholder="Forma de Pagamento"></textarea>
+                <div class="flex justify-end gap-4">
+                    <button type="button" id="cancel-edit-contract-button" class="bg-gray-300 px-4 py-2 rounded">Cancelar</button>
+                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="dossie-modal" class="fixed inset-0 bg-black bg-opacity-70 z-40 hidden items-center justify-center p-2 md:p-4">
+        <div class="bg-white p-4 md:p-6 rounded-lg shadow-xl w-full max-w-6xl modal-content overflow-hidden flex flex-col max-h-[95vh]">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h2 class="text-xl md:text-2xl font-bold text-gray-800">Dossiê do Evento</h2>
+                <button onclick="window.app.closeDossieModal()" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div id="dossie-content" class="grid grid-cols-1 md:grid-cols-3 gap-6 overflow-y-auto p-1 flex-1">
+                <div class="space-y-6">
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-100"><h3 class="font-bold border-b pb-2">Informações</h3>
+                        <p id="dossie-evento-nome" class="font-bold text-lg text-blue-800"></p>
+                        <p id="dossie-cliente-nome" class="font-medium"></p><p id="dossie-evento-data" class="text-sm text-gray-600"></p>
+                        <p id="dossie-contrato-link" class="text-sm text-blue-600 mt-2 block"></p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-100"><h3 class="font-bold border-b pb-2">Entregas</h3><div id="dossie-entregas-lista" class="mt-2"></div></div>
+                </div>
+                <div class="space-y-6">
+                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-100"><h3 class="font-bold text-blue-800">Financeiro</h3>
+                        <div class="mt-2 text-sm">
+                            <p class="flex justify-between"><span>Total:</span> <span id="dossie-valor-contrato" class="font-bold"></span></p>
+                            <p class="flex justify-between border-t border-blue-200 mt-1 pt-1"><span>Restante:</span> <span id="dossie-valor-restante" class="font-bold text-red-600"></span></p>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-100"><h3 class="font-bold border-b pb-2">Pagamentos</h3><div id="dossie-pagamentos-lista" class="mt-2 text-sm"></div></div>
+                </div>
+                <div class="space-y-6">
+                    <div class="bg-green-50 p-4 rounded-lg border border-green-100"><h3 class="font-bold text-green-800">Lucratividade</h3>
+                        <p class="mt-2 text-sm">Lucro Líquido</p>
+                        <p id="dossie-lucro-liquido" class="font-bold text-3xl text-green-700"></p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-100"><h3 class="font-bold border-b pb-2">Custos</h3><div id="dossie-custos-lista" class="mt-2 text-sm"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Container -->
+    <div id="app-container" class="hidden h-screen w-full flex">
+        <!-- Sidebar (Drawer no Mobile) -->
+        <aside id="sidebar" class="sidebar bg-gray-900 text-white w-64 flex flex-col fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition duration-200 ease-in-out z-40 h-full shadow-2xl md:shadow-none">
+            <div class="p-4 text-xl font-bold border-b border-gray-700 flex items-center justify-between">
+                <div class="flex items-center gap-2"><i data-lucide="aperture"></i> Gestor</div>
+                <button onclick="document.getElementById('sidebar').classList.add('-translate-x-full')" class="md:hidden text-gray-400"><i data-lucide="x"></i></button>
+            </div>
+            <nav class="flex-1 p-2 space-y-1 overflow-y-auto">
+                <button onclick="window.app.showSection('dashboard')" class="w-full text-left p-3 rounded hover:bg-gray-700 flex gap-3"><i data-lucide="layout-dashboard"></i> Dashboard</button>
+                <button onclick="window.app.showSection('eventos')" class="w-full text-left p-3 rounded hover:bg-gray-700 flex gap-3"><i data-lucide="trello"></i> Kanban</button>
+                <button onclick="window.app.showSection('clientes')" class="w-full text-left p-3 rounded hover:bg-gray-700 flex gap-3"><i data-lucide="users"></i> Clientes</button>
+                <button onclick="window.app.showSection('contratos')" class="w-full text-left p-3 rounded hover:bg-gray-700 flex gap-3"><i data-lucide="file-text"></i> Contratos</button>
+                <button onclick="window.app.showSection('financeiro')" class="w-full text-left p-3 rounded hover:bg-gray-700 flex gap-3"><i data-lucide="dollar-sign"></i> Financeiro</button>
+                <button onclick="window.app.showSection('calendario')" class="w-full text-left p-3 rounded hover:bg-gray-700 flex gap-3"><i data-lucide="calendar"></i> Calendário</button>
+                
+                <div class="pt-4 mt-4 border-t border-gray-700">
+                    <p class="px-3 text-xs text-gray-500 uppercase font-bold mb-2">Ferramentas</p>
+                    <button onclick="window.app.showSection('gerador')" class="w-full text-left p-3 rounded hover:bg-gray-700 flex gap-3"><i data-lucide="pen-tool"></i> Gerador</button>
+                    <button onclick="window.app.showSection('templates')" class="w-full text-left p-3 rounded hover:bg-gray-700 flex gap-3"><i data-lucide="layout-template"></i> Templates</button>
+                    <button onclick="window.app.showSection('pacotes')" class="w-full text-left p-3 rounded hover:bg-gray-700 flex gap-3"><i data-lucide="archive"></i> Pacotes</button>
+                    <button onclick="window.app.showSection('entrega')" class="w-full text-left p-3 rounded hover:bg-gray-700 flex gap-3"><i data-lucide="package-check"></i> Entrega</button>
+                    <button onclick="window.app.showSection('fotografos')" class="w-full text-left p-3 rounded hover:bg-gray-700 flex gap-3"><i data-lucide="camera"></i> Fotógrafos</button>
+                    <button onclick="window.app.showSection('custos')" class="w-full text-left p-3 rounded hover:bg-gray-700 flex gap-3"><i data-lucide="shopping-cart"></i> Custos</button>
+                    <button onclick="window.app.exportarCSV()" class="w-full text-left p-3 rounded hover:bg-gray-700 flex gap-3 text-green-400"><i data-lucide="download"></i> Exportar CSV</button>
+                </div>
+            </nav>
+            <div class="p-4 border-t border-gray-700 bg-gray-800">
+                <div id="auth-status" class="text-xs text-gray-400 mb-2 truncate"></div>
+                <button id="logout-button" class="w-full bg-red-600 hover:bg-red-700 p-2 rounded text-sm flex items-center justify-center gap-2"><i data-lucide="log-out" class="w-4 h-4"></i> Sair</button>
+            </div>
+        </aside>
+
+        <!-- Overlay Escuro para o Sidebar no Mobile -->
+        <div id="sidebar-overlay" onclick="document.getElementById('sidebar').classList.add('-translate-x-full'); this.classList.add('hidden')" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden md:hidden"></div>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-auto bg-gray-50 p-4 md:p-6 w-full">
+            <!-- Header Mobile (Simplificado) -->
+            <header class="flex justify-between items-center mb-6 md:hidden">
+                <h1 class="text-xl font-bold text-gray-800">Gestor</h1>
+                <!-- Espaço vazio para alinhar se necessário -->
+            </header>
+
+            <!-- Dashboard -->
+            <div id="section-dashboard" class="content-section">
+                <h2 class="text-2xl md:text-3xl font-bold mb-6 text-gray-800">Visão Geral</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-white p-5 rounded-lg shadow-sm border-l-4 border-red-500">
+                        <h3 class="text-gray-500 text-xs uppercase font-bold">Entregas Críticas</h3>
+                        <p id="db-entregas-criticas" class="text-3xl font-bold mt-1">0</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-lg shadow-sm border-l-4 border-green-500">
+                        <h3 class="text-gray-500 text-xs uppercase font-bold">Lucro Líquido</h3>
+                        <p id="lucro-liquido" class="text-2xl md:text-3xl font-bold mt-1 tracking-tight">R$ 0,00</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-lg shadow-sm border-l-4 border-blue-500">
+                        <h3 class="text-gray-500 text-xs uppercase font-bold">Eventos (30d)</h3>
+                        <p id="db-eventos-30d" class="text-3xl font-bold mt-1">0</p>
+                    </div>
+                </div>
+                <!-- Mini Relatórios -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 class="font-bold text-gray-500 text-xs uppercase">Custos</h4>
+                        <p id="total-custos" class="text-lg font-semibold">R$ 0,00</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 class="font-bold text-gray-500 text-xs uppercase">A Receber</h4>
+                        <p id="total-pendente" class="text-lg font-semibold text-yellow-600">R$ 0,00</p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-20">
+                    <div class="bg-white p-5 rounded-lg shadow-sm">
+                        <h2 class="font-bold text-gray-700 mb-4 flex items-center gap-2"><i data-lucide="calendar-clock" class="w-5 h-5 text-blue-500"></i> Próximos</h2>
+                        <div id="dashboard-proximos-eventos" class="space-y-3"></div>
+                    </div>
+                    <div class="bg-white p-5 rounded-lg shadow-sm">
+                        <h2 class="font-bold text-gray-700 mb-4 flex items-center gap-2"><i data-lucide="check-circle" class="w-5 h-5 text-green-500"></i> Entregas Recentes</h2>
+                        <div id="dashboard-ultimos-eventos" class="space-y-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clientes -->
+            <div id="section-clientes" class="content-section hidden">
+                <h2 class="text-2xl font-bold mb-4">Clientes</h2>
+                <div class="bg-white p-4 rounded shadow mb-6">
+                    <form id="form-cliente" class="grid gap-4 md:grid-cols-2">
+                        <input type="text" id="cliente-nome" placeholder="Nome Completo" class="border p-3 rounded" required>
+                        <input type="tel" id="cliente-telefone" placeholder="Telefone" class="border p-3 rounded">
+                        <input type="email" id="cliente-email" placeholder="Email" class="border p-3 rounded">
+                        <input type="text" id="cliente-endereco" placeholder="Endereço" class="border p-3 rounded">
+                        <button type="submit" class="bg-blue-600 text-white p-3 rounded md:col-span-2 font-bold">Cadastrar Cliente</button>
+                    </form>
+                </div>
+                <div class="bg-white rounded shadow overflow-x-auto">
+                    <table class="w-full text-left min-w-[600px]">
+                        <thead class="bg-gray-100 border-b">
+                            <tr><th class="p-3">Nome</th><th class="p-3">Tel</th><th class="p-3">Email</th><th class="p-3">Ações</th></tr>
+                        </thead>
+                        <tbody id="lista-clientes"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Eventos / Kanban -->
+            <div id="section-eventos" class="content-section hidden">
+                <h2 class="text-2xl font-bold mb-4">Kanban</h2>
+                <div class="bg-white p-4 rounded shadow mb-6">
+                    <form id="form-evento" class="grid gap-4 md:grid-cols-4">
+                        <select id="evento-cliente" class="border p-3 rounded" required><option>Carregando...</option></select>
+                        <input type="text" id="evento-nome" placeholder="Título" class="border p-3 rounded" required>
+                        <input type="date" id="evento-data" class="border p-3 rounded" required>
+                        <select id="evento-tipo" class="border p-3 rounded">
+                            <option value="Casamento">Casamento</option>
+                            <option value="Infantil">Infantil</option>
+                            <option value="Corporativo">Corporativo</option>
+                            <option value="Ensaio">Ensaio</option>
+                        </select>
+                        <input type="text" id="evento-local" placeholder="Local" class="border p-3 rounded md:col-span-2">
+                        <input type="text" id="evento-descricao" placeholder="Obs" class="border p-3 rounded md:col-span-2">
+                        <button type="submit" class="bg-indigo-600 text-white p-3 rounded md:col-span-4 font-bold">Criar Evento</button>
+                    </form>
+                </div>
+                <div class="flex gap-2 mb-4">
+                    <form id="form-nova-coluna" class="flex gap-2 w-full md:w-auto">
+                        <input type="text" id="coluna-nome" placeholder="Nova Coluna" class="border p-2 rounded flex-1">
+                        <button class="bg-gray-600 text-white px-4 rounded whitespace-nowrap">Add Coluna</button>
+                    </form>
+                </div>
+                <div id="kanban-board-container" class="pb-20">
+                    <div id="kanban-board" class="flex gap-4 pb-4">
+                        <!-- Colunas geradas via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Outras Seções (Estruturas Mantidas, apenas com padding ajustado) -->
+            <div id="section-fotografos" class="content-section hidden">
+                <h2 class="text-2xl font-bold mb-4">Fotógrafos</h2>
+                <div class="bg-white p-4 rounded shadow mb-4">
+                    <form id="form-fotografo" class="flex flex-col md:flex-row gap-4">
+                        <input type="text" id="fotografo-nome" placeholder="Nome" class="border p-3 rounded flex-1" required>
+                        <input type="text" id="fotografo-contato" placeholder="Contato" class="border p-3 rounded flex-1">
+                        <button type="submit" class="bg-purple-600 text-white p-3 md:px-6 rounded font-bold">Salvar</button>
+                    </form>
+                </div>
+                <div class="bg-white rounded shadow overflow-x-auto"><table class="w-full text-left min-w-[500px]"><thead class="bg-gray-100"><tr><th class="p-3">Nome</th><th class="p-3">Contato</th><th class="p-3">Ações</th></tr></thead><tbody id="lista-fotografos"></tbody></table></div>
+            </div>
+
+            <div id="section-contratos" class="content-section hidden">
+                <h1 class="text-3xl font-bold mb-6">Contratos</h1>
+                <div class="bg-white p-6 rounded shadow mb-6"><form id="form-contrato" class="grid gap-4 md:grid-cols-3"><select id="contrato-cliente" class="p-2 border rounded"></select><select id="contrato-evento" class="p-2 border rounded"></select><input type="number" id="contrato-valor-total" placeholder="Total" class="p-2 border rounded"><input type="date" id="contrato-data" class="p-2 border rounded"><select id="contrato-status" class="p-2 border rounded"><option>Proposta</option><option>Assinado</option></select><input id="contrato-link" placeholder="Link PDF" class="p-2 border rounded"><button class="bg-teal-500 text-white p-2 rounded md:col-span-3">Salvar</button></form></div>
+                <div class="bg-white rounded shadow overflow-x-auto"><table class="w-full min-w-[600px]"><tbody id="lista-contratos"></tbody></table></div>
+            </div>
+
+            <div id="section-financeiro" class="content-section hidden">
+                <h1 class="text-3xl font-bold mb-6">Financeiro</h1>
+                <div class="grid lg:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white p-6 rounded shadow"><h3 class="font-bold text-red-500 mb-4">A Receber</h3><div class="overflow-y-auto max-h-60"><table class="w-full"><tbody id="lista-contas-a-receber"></tbody></table></div></div>
+                    <div class="bg-white p-6 rounded shadow"><h3 class="font-bold text-blue-500 mb-4">Fluxo de Caixa</h3><div class="h-60"><canvas id="fluxo-caixa-chart"></canvas></div></div>
+                </div>
+                <div class="bg-white rounded shadow overflow-x-auto"><table class="w-full min-w-[600px]"><tbody id="lista-financeiro"></tbody></table></div>
+            </div>
+
+            <div id="section-custos" class="content-section hidden">
+                <h1 class="text-3xl font-bold mb-6">Custos</h1>
+                <div class="bg-white p-6 rounded shadow mb-6">
+                    <form id="form-custo" class="grid gap-4 md:grid-cols-5">
+                        <input type="date" id="custo-data" class="p-2 border rounded" required>
+                        <input type="text" id="custo-descricao" placeholder="Descrição" class="p-2 border rounded md:col-span-2" required>
+                        <input type="number" step="0.01" id="custo-valor" placeholder="R$" class="p-2 border rounded" required>
+                        <select id="custo-evento" class="p-2 border rounded"><option value="">Custo Fixo / Nenhum</option></select>
+                        <select id="custo-fotografo" class="p-2 border rounded"><option value="">Fotógrafo...</option></select>
+                        <button type="submit" class="bg-orange-500 text-white p-2 rounded md:col-span-5">Salvar Custo</button>
+                    </form>
+                </div>
+                <div class="bg-white rounded shadow overflow-x-auto"><table class="w-full min-w-[600px]"><tbody id="lista-custos"></tbody></table></div>
+            </div>
+
+             <div id="section-entrega" class="content-section hidden">
+                <h1 class="text-3xl font-bold mb-6">Entrega</h1>
+                <div class="bg-white p-4 rounded shadow mb-4"><select id="entrega-evento-select" class="w-full p-2 border rounded"></select></div>
+                <div id="entrega-management-area" class="grid md:grid-cols-3 gap-4 hidden"></div>
+                <div id="entrega-default-view"><h2 class="font-bold mb-4">Pendências</h2><div id="entrega-atrasos-container" class="space-y-4"></div></div>
+            </div>
+
+            <div id="section-gerador" class="content-section hidden">
+                <h1 class="text-3xl font-bold mb-6">Gerador de Contratos</h1>
+                <div class="bg-white p-6 rounded shadow">
+                    <form id="contractForm" class="grid gap-6 md:grid-cols-2">
+                        <div class="space-y-4">
+                            <h3 class="font-bold text-blue-600">Detalhes</h3>
+                            <select id="contractType" class="w-full p-2 border rounded">
+                                <option value="">Tipo...</option>
+                                <option value="1">Festa Infantil</option><option value="2">Casamento</option><option value="3">Civil</option><option value="6">Formatura</option><option value="7">Ensaio</option><option value="4">Geral</option>
+                            </select>
+                            <div id="dynamicPackageSection" class="hidden">
+                                <label class="text-sm">Pacote</label>
+                                <select id="contractPackage" class="w-full p-2 border rounded"><option>Selecione o Tipo...</option></select>
+                            </div>
+                            <input type="date" id="eventDate" class="w-full p-2 border rounded">
+                            <input type="time" id="eventTime" class="w-full p-2 border rounded">
+                            <input type="number" id="eventDuration" placeholder="Duração (h)" class="w-full p-2 border rounded">
+                            <input type="text" id="eventLocal" placeholder="Local" class="w-full p-2 border rounded">
+                            <input type="number" id="value" placeholder="Valor (R$)" step="0.01" class="w-full p-2 border rounded">
+                            <input type="text" id="paymentMethod" placeholder="Forma Pagamento" class="w-full p-2 border rounded">
+                        </div>
+                        <div class="space-y-4">
+                            <h3 class="font-bold text-green-600">Contratante</h3>
+                            <input type="text" id="clientName" placeholder="Nome" class="w-full p-2 border rounded">
+                            <div id="formaturaStudentDetails" class="hidden space-y-2"><input type="text" id="studentName" placeholder="Formando"><input type="text" id="studentClass" placeholder="Turma"></div>
+                            <input type="text" id="clientCPF" placeholder="CPF" class="w-full p-2 border rounded">
+                            <input type="text" id="clientRG" placeholder="RG" class="w-full p-2 border rounded">
+                            <input type="text" id="clientAddress" placeholder="Endereço" class="w-full p-2 border rounded">
+                            <input type="email" id="clientEmail" placeholder="Email" class="w-full p-2 border rounded">
+                            <input type="tel" id="clientPhone" placeholder="Telefone" class="w-full p-2 border rounded">
+                            <label><input type="checkbox" id="imageRights"> Autoriza uso de imagem</label>
+                        </div>
+                        <button type="button" id="generateButton" class="bg-blue-600 text-white p-3 rounded md:col-span-2 font-bold">Gerar Contrato</button>
+                    </form>
+                </div>
+                <div id="outputSection" class="mt-8 hidden bg-white p-6 rounded shadow">
+                    <div id="contractOutput" class="mb-4"></div>
+                    <button id="printButton" class="bg-gray-700 text-white p-2 rounded">Imprimir/PDF</button>
+                    <button id="copyButton" class="bg-green-600 text-white p-2 rounded">Copiar</button>
+                </div>
+            </div>
+
+            <!-- Editor de Templates -->
+            <div id="section-templates" class="content-section hidden">
+                <h1 class="text-3xl font-bold mb-6">Templates</h1>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 bg-white p-6 rounded shadow">
+                        <form id="form-template">
+                            <input type="hidden" id="template-id">
+                            <input type="text" id="template-titulo" placeholder="Título" class="w-full p-2 border rounded mb-4" required>
+                            <select id="template-link-tipo" class="w-full p-2 border rounded mb-4" required>
+                                <option value="">Vincular ao Tipo...</option>
+                                <option value="1">Festa Infantil</option><option value="2">Casamento</option><option value="3">Civil</option><option value="6">Formatura</option><option value="7">Ensaio</option><option value="4">Geral</option>
+                            </select>
+                            <select id="template-link-pacote" class="w-full p-2 border rounded mb-4"><option>Selecione o Tipo primeiro...</option></select>
+                            
+                            <!-- Editor Rico -->
+                            <div class="mb-4">
+                                <div class="editor-toolbar">
+                                    <button type="button" class="editor-btn" onclick="document.execCommand('bold',false,null)">B</button>
+                                    <button type="button" class="editor-btn" onclick="document.execCommand('italic',false,null)">I</button>
+                                    <button type="button" class="editor-btn" onclick="document.execCommand('underline',false,null)">U</button>
+                                    <button type="button" class="editor-btn" onclick="document.execCommand('justifyLeft',false,null)">Esq</button>
+                                    <button type="button" class="editor-btn" onclick="document.execCommand('justifyCenter',false,null)">Cen</button>
+                                    <button type="button" class="editor-btn" onclick="document.execCommand('justifyFull',false,null)">Jus</button>
+                                    <button type="button" class="editor-btn" onclick="document.execCommand('formatBlock',false,'h2')">H2</button>
+                                    <button type="button" class="editor-btn" onclick="document.execCommand('formatBlock',false,'p')">P</button>
+                                </div>
+                                <div id="template-corpo" class="rich-editor" contenteditable="true"></div>
+                            </div>
+
+                            <div class="flex gap-4"><button type="submit" class="bg-green-500 text-white p-2 rounded">Salvar</button><button type="button" onclick="window.app.clearTemplateForm()" class="bg-gray-400 text-white p-2 rounded">Novo</button></div>
+                        </form>
+                    </div>
+                    <div class="bg-white p-6 rounded shadow"><h3 class="font-bold mb-4">Salvos</h3><div id="lista-templates"></div></div>
+                </div>
+            </div>
+
+            <!-- Pacotes -->
+            <div id="section-pacotes" class="content-section hidden">
+                <h1 class="text-3xl font-bold mb-6">Pacotes</h1>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded shadow h-fit">
+                        <form id="form-pacote">
+                            <input type="hidden" id="pacote-id">
+                            <select id="pacote-tipo-vinculo" class="w-full p-2 border rounded mb-4" required>
+                                <option value="">Categoria...</option>
+                                <option value="1">Festa Infantil</option><option value="2">Casamento</option><option value="3">Civil</option><option value="6">Formatura</option><option value="7">Ensaio</option>
+                            </select>
+                            <input type="text" id="pacote-nome" placeholder="Nome (Ex: Ouro)" class="w-full p-2 border rounded mb-4" required>
+                            <input type="number" step="0.01" id="pacote-valor" placeholder="Valor" class="w-full p-2 border rounded mb-4" required>
+                            <div class="flex gap-4"><button type="submit" class="bg-green-500 text-white p-2 rounded">Salvar</button><button type="button" onclick="window.app.clearPacoteForm()" class="bg-gray-400 text-white p-2 rounded">Novo</button></div>
+                        </form>
+                    </div>
+                    <div class="lg:col-span-2 bg-white p-6 rounded shadow"><h3 class="font-bold mb-4">Lista</h3><div id="lista-pacotes-container"></div></div>
+                </div>
+            </div>
+
+            <!-- Calendário -->
+            <div id="section-calendario" class="content-section hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-3xl font-bold text-gray-800">Calendário</h1>
+                    <div class="flex items-center gap-4">
+                        <button id="calendario-prev" class="p-2 bg-white rounded shadow hover:bg-gray-100"><i data-lucide="chevron-left"></i></button>
+                        <h2 id="calendario-mes-ano" class="text-xl font-bold w-40 text-center"></h2>
+                        <button id="calendario-next" class="p-2 bg-white rounded shadow hover:bg-gray-100"><i data-lucide="chevron-right"></i></button>
+                    </div>
+                </div>
+                <div class="bg-white rounded shadow overflow-hidden">
+                    <div class="grid grid-cols-7 gap-px text-center font-bold bg-gray-100 p-2">
+                        <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
+                    </div>
+                    <div id="calendario-grid" class="grid grid-cols-7 gap-px bg-gray-200 border-t"></div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MOBILE BOTTOM NAVIGATION (A Mágica) -->
+    <nav id="bottom-nav" class="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 flex justify-around py-3 md:hidden z-50 shadow-lg safe-area-bottom">
+        <button onclick="window.app.showSection('dashboard')" class="bottom-nav-item flex flex-col items-center justify-center text-xs text-gray-500 hover:text-blue-600 px-2 active">
+            <i data-lucide="layout-dashboard" class="w-6 h-6 mb-1"></i>
+            <span>Início</span>
+        </button>
+        <button onclick="window.app.showSection('eventos')" class="bottom-nav-item flex flex-col items-center justify-center text-xs text-gray-500 hover:text-blue-600 px-2">
+            <i data-lucide="trello" class="w-6 h-6 mb-1"></i>
+            <span>Kanban</span>
+        </button>
+        <button onclick="window.app.showSection('clientes')" class="bottom-nav-item flex flex-col items-center justify-center text-xs text-gray-500 hover:text-blue-600 px-2">
+            <i data-lucide="users" class="w-6 h-6 mb-1"></i>
+            <span>Clientes</span>
+        </button>
+        <button onclick="window.app.showSection('financeiro')" class="bottom-nav-item flex flex-col items-center justify-center text-xs text-gray-500 hover:text-blue-600 px-2">
+            <i data-lucide="dollar-sign" class="w-6 h-6 mb-1"></i>
+            <span>Finan</span>
+        </button>
+        <button onclick="document.getElementById('sidebar').classList.toggle('-translate-x-full'); document.getElementById('sidebar-overlay').classList.toggle('hidden')" class="bottom-nav-item flex flex-col items-center justify-center text-xs text-gray-500 hover:text-blue-600 px-2">
+            <i data-lucide="menu" class="w-6 h-6 mb-1"></i>
+            <span>Menu</span>
+        </button>
+    </nav>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
+```
+
+### 2. Atualizar o `js/ui.js`
+
+Precisamos fazer com que a função `showSection` (que muda as telas) também atualize a cor dos ícones na barra inferior, para o usuário saber onde está.
+
+Abra o `js/ui.js` e localize a função `showSection`. Substitua ela por esta versão melhorada (ou substitua o arquivo todo se preferir, mas a mudança principal é aqui):
+
+```javascript
+// ... (dentro de ui.js)
+
+export function showSection(sectionId, dbState, calendarioData) {
+    // 1. Esconde tudo
+    document.querySelectorAll('.content-section').forEach(section => section.classList.add('hidden'));
+    
+    // 2. Mostra a seção desejada
+    const sectionElement = document.getElementById(`section-${sectionId}`);
+    if (sectionElement) {
+        sectionElement.classList.remove('hidden');
+    }
+    
+    // 3. Fecha menus laterais (Mobile)
+    if (window.innerWidth < 768) {
+        document.getElementById('sidebar').classList.add('-translate-x-full');
+        document.getElementById('sidebar-overlay').classList.add('hidden'); // Fecha o overlay também
+    }
+    
+    // 4. Atualiza Sidebar (Desktop)
+    document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('bg-gray-700'));
+    const activeLink = document.querySelector(`a[onclick*="showSection('${sectionId}')"]`); // Se for link <a>
+    if (activeLink) activeLink.classList.add('bg-gray-700');
+    
+    const activeButton = document.querySelector(`button[onclick*="showSection('${sectionId}')"]`); // Se for botão <button>
+    if (activeButton && activeButton.closest('aside')) activeButton.classList.add('bg-gray-700');
+
+    // 5. ATUALIZAÇÃO DA BARRA INFERIOR (MOBILE)
+    document.querySelectorAll('.bottom-nav-item').forEach(btn => {
+        btn.classList.remove('text-blue-600', 'font-bold');
+        btn.classList.add('text-gray-500');
+    });
+    // Tenta achar o botão correspondente na barra inferior
+    const bottomBtn = document.querySelector(`#bottom-nav button[onclick*="'${sectionId}'"]`);
+    if (bottomBtn) {
+        bottomBtn.classList.remove('text-gray-500');
+        bottomBtn.classList.add('text-blue-600', 'font-bold');
+    }
+
+    // 6. Lógicas específicas por seção (Mantidas do original)
+    if (sectionId === 'entrega') {
+        document.getElementById('entrega-evento-select').value = '';
+        document.getElementById('entrega-default-view').classList.remove('hidden');
+        document.getElementById('entrega-management-area').classList.add('hidden');
+        renderEntregasAtrasadas(dbState);
+    }
+    if (sectionId === 'contratos') {
+        updateContratoEventoSelect(null, dbState);
+        document.getElementById('form-contrato').reset();
+        document.getElementById('contrato-data').valueAsDate = new Date();
+    }
+    if (sectionId === 'calendario') {
+        renderCalendario(calendarioData, dbState);
+    }
+    if (sectionId === 'gerador') {
+        document.getElementById('contractForm').reset();
+        const contractTypeSelect = document.getElementById('contractType');
+        contractTypeSelect.value = '';
+        contractTypeSelect.dispatchEvent(new Event('change'));
+        document.getElementById('outputSection').classList.add('hidden');
+    }
+    if (sectionId === 'templates') {
+        clearTemplateForm();
+        renderTemplates(dbState);
+    }
+    if (sectionId === 'pacotes') {
+        clearPacoteForm();
+        renderPacotes(dbState);
+    }
+    if (sectionId === 'financeiro') {
+        renderContasAReceber(dbState);
+        renderFluxoDeCaixaChart(dbState);
+    }
+}
